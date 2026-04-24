@@ -6,43 +6,42 @@ export default async function AdminDashboard() {
   if (!auth) redirect('/admin/login');
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-white px-8 py-12">
+    <main style={{ minHeight: '100vh', background: '#F8F5F0', padding: '48px 32px', fontFamily: 'Georgia, serif', color: '#1C1A17' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-12">
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 52, borderBottom: '1px solid #DDD8D0', paddingBottom: 24 }}>
           <div>
-            <h1 className="text-3xl font-thin tracking-[0.4em]">SEAL</h1>
-            <p className="text-xs tracking-[0.3em] text-[#555] uppercase mt-1">Admin Dashboard</p>
+            <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: '0.4em', margin: 0 }}>SEAL</h1>
+            <p style={{ fontSize: 10, letterSpacing: '0.3em', color: '#8B7355', textTransform: 'uppercase', margin: '6px 0 0', fontFamily: 'Helvetica, Arial, sans-serif' }}>Admin Dashboard</p>
           </div>
           <form action="/api/admin/logout" method="POST">
-            <button
-              type="submit"
-              className="text-xs tracking-[0.2em] uppercase text-[#555] hover:text-white transition-colors"
-            >
+            <button type="submit" style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#B0A898', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
               Logout
             </button>
           </form>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-12">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 48 }}>
           {[
             { label: 'Total Seals', value: '0' },
             { label: 'Pending QA', value: '0' },
             { label: 'Delivered', value: '0' },
           ].map(({ label, value }) => (
-            <div key={label} className="border border-[#222] p-6">
-              <p className="text-3xl font-thin mb-2">{value}</p>
-              <p className="text-[10px] tracking-[0.2em] text-[#555] uppercase">{label}</p>
+            <div key={label} style={{ border: '1px solid #DDD8D0', padding: '28px 24px', background: '#FFFFFF' }}>
+              <p style={{ fontSize: 36, fontWeight: 200, margin: '0 0 6px', color: '#1C1A17' }}>{value}</p>
+              <p style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#B0A898', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>{label}</p>
             </div>
           ))}
         </div>
 
-        {/* Placeholder sections */}
-        <div className="border border-[#222] p-8">
-          <p className="text-[10px] tracking-[0.3em] text-[#555] uppercase mb-6">Recent Profiles</p>
-          <p className="text-[#444] text-sm">No profiles yet. Start from the questionnaire.</p>
+        {/* Recent Profiles */}
+        <div style={{ border: '1px solid #DDD8D0', padding: '32px', background: '#FFFFFF' }}>
+          <p style={{ fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#8B7355', marginBottom: 20, fontFamily: 'Helvetica, Arial, sans-serif' }}>Recent Profiles</p>
+          <p style={{ color: '#B0A898', fontSize: 14, margin: 0 }}>No profiles yet. Start from the questionnaire.</p>
         </div>
+
       </div>
     </main>
   );

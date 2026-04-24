@@ -13,15 +13,12 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     const res = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
     });
-
     setLoading(false);
-
     if (res.ok) {
       router.push('/admin/dashboard');
     } else {
@@ -31,37 +28,38 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] text-white flex flex-col items-center justify-center px-6">
+    <main style={{ minHeight: '100vh', background: '#F8F5F0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', fontFamily: 'Georgia, serif' }}>
 
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-thin tracking-[0.4em] text-white">SEAL</h1>
-        <p className="mt-2 text-xs tracking-[0.3em] text-[#555] uppercase">Admin Access</p>
+      <div style={{ marginBottom: 48, textAlign: 'center' }}>
+        <h1 style={{ fontSize: 34, fontWeight: 300, letterSpacing: '0.45em', color: '#1C1A17', margin: 0 }}>SEAL</h1>
+        <div style={{ width: 40, height: 1, background: '#8B7355', margin: '10px auto 8px' }} />
+        <p style={{ fontSize: 10, letterSpacing: '0.3em', color: '#8B7355', textTransform: 'uppercase', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>Admin Access</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-6">
+      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 28 }}>
         <div>
-          <label className="block text-[10px] tracking-[0.3em] text-[#555] uppercase mb-3">
+          <label style={{ display: 'block', fontSize: 10, letterSpacing: '0.3em', color: '#B0A898', textTransform: 'uppercase', marginBottom: 12, fontFamily: 'Helvetica, Arial, sans-serif' }}>
             Password
           </label>
           <input
             type="password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            placeholder="Enter admin password"
+            placeholder="Enter password"
             required
             autoFocus
-            className="w-full bg-transparent border-b border-[#333] text-white text-lg pb-3 outline-none placeholder:text-[#333] focus:border-white transition-colors"
+            style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '1px solid #DDD8D0', color: '#1C1A17', fontSize: 17, paddingBottom: 12, outline: 'none', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }}
           />
         </div>
 
         {error && (
-          <p className="text-red-400 text-sm">{error}</p>
+          <p style={{ color: '#A0522D', fontSize: 13, margin: 0 }}>{error}</p>
         )}
 
         <button
           type="submit"
           disabled={loading || password.length === 0}
-          className="mt-2 px-8 py-3 border border-white text-sm tracking-[0.2em] uppercase disabled:opacity-20 disabled:cursor-not-allowed hover:bg-white hover:text-black transition-all"
+          style={{ padding: '13px 36px', border: '1px solid #8B7355', background: 'transparent', color: '#8B7355', fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', opacity: password.length === 0 ? 0.4 : 1 }}
         >
           {loading ? 'Verifying...' : 'Enter'}
         </button>
