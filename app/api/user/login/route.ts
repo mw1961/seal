@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'crypto';
+import { createHash, createHmac } from 'crypto';
 
 const USER_HASH = process.env.USER_PASSWORD_HASH
   ?? '3709cbe95c1e01aeb65f909daf7c1733bed0ddb7b826b426a209fe106a4bd0c2'; // mw11
 
 const SESSION_SECRET = process.env.SESSION_SECRET ?? 'seal-dev-secret-2026';
+
+export const USER_TOKEN = createHmac('sha256', SESSION_SECRET).update('user:123').digest('hex');
 
 export async function POST(request: NextRequest) {
   const { username, password } = await request.json();
@@ -19,12 +21,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  const token = createHash('sha256')
-    .update(`user:${SESSION_SECRET}:${Date.now()}`)
-    .digest('hex');
-
   const response = NextResponse.json({ ok: true });
-  response.cookies.set('seal_user', token, {
+  response.cookies.set('seal_user', USER_TOKEN, {
     httpOnly: true,
     sameSite: 'strict',
     secure: process.env.NODE_ENV === 'production',
@@ -32,11 +30,5 @@ export async function POST(request: NextRequest) {
     path: '/',
   });
 
-  global.__sealUserToken = token;
-
   return response;
-}
-
-declare global {
-  var __sealUserToken: string | undefined;
 }
