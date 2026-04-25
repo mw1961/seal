@@ -19,43 +19,54 @@ const SHAPE_CLIP: Record<string, string> = {
 };
 
 const SHAPE_BORDER: Record<string, string> = {
-  circle:   '<circle cx="100" cy="100" r="88" fill="none" stroke="COLOR" stroke-width="2.5"/>',
-  square:   '<rect x="12" y="12" width="176" height="176" fill="none" stroke="COLOR" stroke-width="2.5"/>',
-  triangle: '<polygon points="100,14 188,174 12,174" fill="none" stroke="COLOR" stroke-width="2.5"/>',
+  circle:   '<circle cx="100" cy="100" r="88" fill="none" stroke="COLOR" stroke-width="4"/>',
+  square:   '<rect x="12" y="12" width="176" height="176" fill="none" stroke="COLOR" stroke-width="4"/>',
+  triangle: '<polygon points="100,14 188,174 12,174" fill="none" stroke="COLOR" stroke-width="4"/>',
 };
 
 function buildPrompt(profile: Omit<SealProfile, 'id' | 'createdAt'>, variationIndex: number): string {
   const style = STYLE_DESCRIPTIONS[profile.visual.style] ?? STYLE_DESCRIPTIONS.modern;
   const variationHints = [
-    'Focus on the geographic/cultural origin as the primary motif',
-    'Focus on the occupation/purpose as the primary motif',
-    'Focus on the core values as the primary motif',
-    'Blend all elements into a unified abstract composition',
-    'Use the shape itself as the primary design element, filled with symbolic texture',
+    'Draw a single bold geometric form inspired by the geographic or cultural origin',
+    'Draw a single bold geometric form inspired by the family occupation or purpose',
+    'Draw a single bold geometric form that expresses the core values symbolically',
+    'Draw a unified abstract mark combining origin and values into one simple shape',
+    'Draw a bold minimalist mark using only 2–3 geometric primitives (circle, line, arc)',
   ];
 
-  return `You are a master seal designer specializing in ${profile.visual.style} heritage marks.
+  return `You are a master hanko and wax-seal engraver. You design marks that will be physically CNC-engraved into metal and used as ink stamps.
 
-Design a single family seal symbol for this profile:
-- Lineage: ${profile.roots.origin || 'unspecified origin'}
-- Purpose/Occupation: ${profile.roots.historicOccupation || 'unspecified'}
+PHYSICAL PRODUCTION CONSTRAINTS — these are hard limits, not suggestions:
+- Minimum stroke-width: 4 (anything thinner breaks during engraving)
+- NO enclosed areas smaller than 12×12 units (they fill with ink and become blobs)
+- NO more than 4 path elements total (complexity destroys stamp legibility)
+- NO star shapes, NO snowflakes, NO multi-point radial patterns
+- NO overlapping lines or paths that cross each other more than once
+- Minimum gap between any two parallel lines: 10 units
+- All paths closed with Z
+
+Family profile:
+- Origin: ${profile.roots.origin || 'unspecified'}
+- Occupation/Purpose: ${profile.roots.historicOccupation || 'unspecified'}
 - Core Values: ${profile.values.join(', ') || 'unspecified'}
-- Shape boundary: ${profile.visual.shape}
 - Style: ${style}
-- Design focus for this variation: ${variationHints[variationIndex]}
+- This variation: ${variationHints[variationIndex]}
 
-OUTPUT RULES (strictly enforced — violations will be rejected):
-1. Output ONLY the SVG <path> and <g> elements that form the INNER SYMBOL — no <svg> wrapper, no borders, no background
-2. NO text, letters, numbers, or character glyphs anywhere
-3. NO fill — only stroke. Use: stroke="{{COLOR}}" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-4. All paths MUST end with Z (closed)
-5. Design must be centered around the point 100,100
-6. All coordinates must stay within a 30–170 range (fits inside all three shape options)
-7. Minimum 3 distinct path elements, maximum 8
-8. Pure geometric/abstract symbolic forms only — no literal drawings
-9. The mark must feel like a family crest or clan mon, not a logo
+DESIGN APPROACH — think like a Japanese kamon master:
+- One dominant shape that fills the space boldly
+- Maximum 1 secondary element inside or around it
+- Wide strokes, open spaces, strong silhouette
+- The mark must be readable at 30mm diameter
+- Think: crescent + dot, bold spiral, three parallel arcs, a single open lotus form
 
-Respond with ONLY the SVG path elements, nothing else. No explanation, no markdown, no code fences.`;
+SVG RULES:
+1. Output ONLY inner path/g elements — no svg wrapper, no border, no background
+2. stroke="{{COLOR}}" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+3. Center all elements around 100,100
+4. All coordinates within 35–165 range
+5. NO text, letters, numbers anywhere
+
+Respond with ONLY the SVG elements. No explanation, no markdown, no code fences.`;
 }
 
 async function generateOneSeal(
