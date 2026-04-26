@@ -7,12 +7,15 @@ const C = {
   gold: '#8B7355', text: '#1C1A17', muted: '#B0A898', sub: '#7A7060',
 };
 
-const SHAPES  = ['circle', 'square', 'triangle'];
-const STYLES  = ['japanese', 'modern', 'ancient', 'abstract'];
-const COLORS  = ['#000000', '#191970', '#8B0000', '#1B4332'];
-const VALUES  = ['Resilience', 'Freedom', 'Harmony', 'Loyalty', 'Wisdom', 'Courage', 'Creativity', 'Justice'];
+const SHAPES = ['circle', 'square', 'triangle'];
+const STYLES = ['japanese', 'modern', 'ancient', 'abstract'];
+const COLORS = ['#000000', '#191970', '#8B0000', '#1B4332'];
+const VALUES = ['Resilience', 'Freedom', 'Harmony', 'Loyalty', 'Wisdom', 'Courage', 'Creativity', 'Justice'];
+
+type Mode = 'library' | 'ai';
 
 export default function SvgLabPage() {
+  const [mode,       setMode]       = useState<Mode>('library');
   const [origin,     setOrigin]     = useState('Canada');
   const [occupation, setOccupation] = useState('Carpenters');
   const [values,     setValues]     = useState<string[]>(['Resilience', 'Loyalty']);
@@ -29,16 +32,21 @@ export default function SvgLabPage() {
   async function generate() {
     setLoading(true); setError('');
     try {
-      const res = await fetch('/api/generate-seal-single', {
+      const endpoint = mode === 'library' ? '/api/generate-seal-library' : '/api/generate-seal-single';
+      const body = mode === 'library'
+        ? { origin, occupation, values, shape, color, mode: 'primary_only' }
+        : { origin, occupation, values, shape, style, color };
+
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ origin, occupation, values, shape, style, color }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setSvg(data.svg);
       setSvgCode(data.svg);
-      setSymbols(data.symbols);
+      setSymbols(data.symbolsUsed ?? data.symbols ?? '');
       setHistory(h => [data.svg, ...h].slice(0, 12));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed');
@@ -60,9 +68,19 @@ export default function SvgLabPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32, borderBottom: `1px solid ${C.border}`, paddingBottom: 20 }}>
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 300, letterSpacing: '0.4em', margin: 0 }}>SYGNEO</h1>
-            <p style={{ fontSize: 10, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase', margin: '4px 0 0', fontFamily: 'Helvetica, Arial, sans-serif' }}>SVG Design Lab — Haiku Model</p>
+            <p style={{ fontSize: 10, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase', margin: '4px 0 0', fontFamily: 'Helvetica, Arial, sans-serif' }}>SVG Design Lab</p>
           </div>
-          <a href="/admin/dashboard" style={{ fontSize: 11, color: C.muted, textDecoration: 'none', letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>← Dashboard</a>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button onClick={() => setMode('library')}
+              style={{ padding: '8px 16px', border: `1px solid ${mode === 'library' ? C.gold : C.border}`, background: mode === 'library' ? C.gold : 'transparent', color: mode === 'library' ? '#fff' : C.sub, fontSize: 11, letterSpacing: '0.15em', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              Library ($0)
+            </button>
+            <button onClick={() => setMode('ai')}
+              style={{ padding: '8px 16px', border: `1px solid ${mode === 'ai' ? C.gold : C.border}`, background: mode === 'ai' ? C.gold : 'transparent', color: mode === 'ai' ? '#fff' : C.sub, fontSize: 11, letterSpacing: '0.15em', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              AI Haiku (~$0.001)
+            </button>
+            <a href="/admin/dashboard" style={{ fontSize: 11, color: C.muted, textDecoration: 'none', letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', marginLeft: 16 }}>← Dashboard</a>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 24 }}>
