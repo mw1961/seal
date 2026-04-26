@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     };
 
-    await redis.set(`selection:${id}`, JSON.stringify(selection));
-    await redis.lpush('selections', id);
+    await redis.set(`sygneo:selection:${id}`, JSON.stringify(selection));
+    await redis.lpush('sygneo:selections', id);
 
     return NextResponse.json({ ok: true, id });
   } catch (err) {
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const ids = await redis.lrange('selections', 0, 49);
+    const ids = await redis.lrange('sygneo:selections', 0, 49);
     if (!ids || ids.length === 0) return NextResponse.json({ selections: [] });
 
-    const raw = await Promise.all(ids.map(id => redis.get(`selection:${id}`)));
+    const raw = await Promise.all(ids.map(id => redis.get(`sygneo:selection:${id}`)));
     const selections = raw
       .filter(Boolean)
       .map(s => (typeof s === 'string' ? JSON.parse(s) : s) as SealSelection);
@@ -52,7 +52,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const { id, status } = await request.json();
-    const raw = await redis.get(`selection:${id}`);
+    const raw = await redis.get(`sygneo:selection:${id}`);
     if (!raw) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     const selection = (typeof raw === 'string' ? JSON.parse(raw) : raw) as SealSelection;
