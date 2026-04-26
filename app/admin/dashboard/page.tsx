@@ -32,9 +32,12 @@ export default async function AdminDashboard() {
             <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: '0.4em', margin: 0 }}>SYGNEO</h1>
             <p style={{ fontSize: 10, letterSpacing: '0.3em', color: '#8B7355', textTransform: 'uppercase', margin: '6px 0 0', fontFamily: 'Helvetica, Arial, sans-serif' }}>Admin Dashboard</p>
           </div>
-          <form action="/api/admin/logout" method="POST">
-            <button type="submit" style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#B0A898', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>Logout</button>
-          </form>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <a href="/admin/svg-lab" style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#8B7355', textDecoration: 'none', border: '1px solid #8B7355', padding: '8px 16px', fontFamily: 'Helvetica, Arial, sans-serif' }}>SVG Lab</a>
+            <form action="/api/admin/logout" method="POST">
+              <button type="submit" style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#B0A898', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>Logout</button>
+            </form>
+          </div>
         </div>
 
         {/* Stats */}
