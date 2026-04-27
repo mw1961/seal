@@ -86,29 +86,32 @@ function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: nu
   return segs.join(' ');
 }
 
-// ── Organic: Concentric wavy rings (fingerprint / topographic) ───────────────
+// ── Organic: Sparse topographic rings (5-7, well-spaced, gentle wave) ────────
 
-function wavyRings(rng: () => number, cx: number, cy: number, maxR: number, ringCount: number): string {
+function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
   const paths: string[] = [];
-  const PTS = 64;
+  const rings = 5 + Math.floor(rng() * 3); // 5–7 rings only
+  const PTS = 72;
 
-  for (let ring = 1; ring <= ringCount; ring++) {
-    const baseR = (ring / ringCount) * maxR;
-    const scale = baseR * (0.07 + rng() * 0.06);
-    const freq1 = 2 + Math.floor(rng() * 5);
+  for (let ring = 1; ring <= rings; ring++) {
+    const baseR = (ring / (rings + 1)) * r * 0.92; // never reach edge, well-spaced
+    // Amplitude: at most 15% of gap between rings — no overlapping
+    const gap = r * 0.92 / (rings + 1);
+    const amp = gap * (0.20 + rng() * 0.20);
+    const freq1 = 2 + Math.floor(rng() * 4);
     const freq2 = 1 + Math.floor(rng() * 3);
     const ph1   = rng() * Math.PI * 2;
     const ph2   = rng() * Math.PI * 2;
 
     const pts: [number, number][] = [];
     for (let i = 0; i < PTS; i++) {
-      const a = (i / PTS) * Math.PI * 2;
-      const pr = baseR + Math.sin(a * freq1 + ph1) * scale * 0.6
-                       + Math.sin(a * freq2 + ph2) * scale * 0.4;
+      const a  = (i / PTS) * Math.PI * 2;
+      const pr = baseR
+        + Math.sin(a * freq1 + ph1) * amp * 0.65
+        + Math.sin(a * freq2 + ph2) * amp * 0.35;
       pts.push([cx + Math.cos(a) * pr, cy + Math.sin(a) * pr]);
     }
 
-    // Catmull-Rom → Cubic Bezier closed path
     let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
     for (let i = 0; i < PTS; i++) {
       const p0 = pts[(i - 1 + PTS) % PTS];
@@ -121,27 +124,22 @@ function wavyRings(rng: () => number, cx: number, cy: number, maxR: number, ring
       const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
       d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
     }
-    d += ' Z';
-    paths.push(d);
+    paths.push(d + ' Z');
   }
   return paths.join(' ');
 }
 
-function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
-  const rings = 12 + Math.floor(rng() * 5);
-  return wavyRings(rng, cx, cy, r * 0.90, rings);
-}
-
-// ── Hybrid: Angular outer segments + fingerprint inner rings ─────────────────
+// ── Hybrid: Gear outer ring + radial spokes inner (compass / lantern) ────────
 
 function hybridPattern(rng: () => number, cx: number, cy: number, r: number): string {
+  // Outer gear segments
   const outerParts: string[] = [];
   const segments = 12 + Math.floor(rng() * 6);
   for (let i = 0; i < segments; i++) {
     const a1 = (i / segments) * Math.PI * 2;
-    const a2 = ((i + 0.7 + rng() * 0.25) / segments) * Math.PI * 2;
-    const r1 = r * 0.55 + rng() * r * 0.1;
-    const r2 = r * 0.80 + rng() * r * 0.06;
+    const a2 = ((i + 0.72 + rng() * 0.2) / segments) * Math.PI * 2;
+    const r1 = r * 0.56 + rng() * r * 0.08;
+    const r2 = r * 0.80 + rng() * r * 0.05;
     outerParts.push(
       `M${(cx + Math.cos(a1) * r1).toFixed(1)},${(cy + Math.sin(a1) * r1).toFixed(1)} ` +
       `L${(cx + Math.cos(a1) * r2).toFixed(1)},${(cy + Math.sin(a1) * r2).toFixed(1)} ` +
@@ -150,10 +148,36 @@ function hybridPattern(rng: () => number, cx: number, cy: number, r: number): st
     );
   }
 
-  const innerRings = 7 + Math.floor(rng() * 4);
-  const inner = wavyRings(rng, cx, cy, r * 0.46, innerRings);
+  // Inner radial spokes — alternating long/short, slight curve
+  const innerParts: string[] = [];
+  const spokes = 16 + Math.floor(rng() * 9); // 16–24 spokes
+  const innerStart = r * 0.08;
+  const longR  = r * 0.48;
+  const shortR = r * 0.30 + rng() * r * 0.08;
+  const curveMag = r * 0.07;
 
-  return outerParts.join(' ') + ' ' + inner;
+  for (let i = 0; i < spokes; i++) {
+    const a    = (i / spokes) * Math.PI * 2;
+    const tipR = i % 2 === 0 ? longR : shortR;
+    const sx   = cx + Math.cos(a) * innerStart;
+    const sy   = cy + Math.sin(a) * innerStart;
+    const ex   = cx + Math.cos(a) * tipR;
+    const ey   = cy + Math.sin(a) * tipR;
+    // Slight perpendicular curve — direction alternates per spoke
+    const perp = a + Math.PI / 2;
+    const side = (rng() - 0.5) * 2 > 0 ? 1 : -1;
+    const mid  = tipR * 0.55;
+    const cpx  = cx + Math.cos(a) * mid + Math.cos(perp) * curveMag * side;
+    const cpy  = cy + Math.sin(a) * mid + Math.sin(perp) * curveMag * side;
+    innerParts.push(
+      `M${sx.toFixed(1)},${sy.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`
+    );
+  }
+
+  // Small center circle
+  innerParts.push(`M${(cx + r * 0.08).toFixed(1)},${cy.toFixed(1)} A${(r * 0.08).toFixed(1)},${(r * 0.08).toFixed(1)} 0 1 1 ${(cx - r * 0.08).toFixed(1)},${cy.toFixed(1)} A${(r * 0.08).toFixed(1)},${(r * 0.08).toFixed(1)} 0 1 1 ${(cx + r * 0.08).toFixed(1)},${cy.toFixed(1)}`);
+
+  return [...outerParts, ...innerParts].join(' ');
 }
 
 // ── Shape clips and borders ───────────────────────────────────────────────────
