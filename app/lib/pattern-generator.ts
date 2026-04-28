@@ -86,42 +86,36 @@ function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: nu
   return segs.join(' ');
 }
 
-// ── Organic: Tilted elliptical topographic rings (no two rings identical) ────
+// ── Organic: Bold elliptical rings — strictly inside shape ────────────────────
 
 function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
   const paths: string[] = [];
-  const rings = 5 + Math.floor(rng() * 3);
-  const PTS   = 72;
-  const gap   = (r * 0.92) / (rings + 1);
+  const rings  = 4 + Math.floor(rng() * 2); // 4–5 rings
+  const PTS    = 64;
+  const safeR  = r * 0.82; // hard ceiling — always inside clip + border gap
+  const gap    = safeR / (rings + 1);
 
-  // Whole pattern shifts slightly off-center — outer rings drift less
-  const driftX = (rng() - 0.5) * r * 0.18;
-  const driftY = (rng() - 0.5) * r * 0.18;
+  // Subtle drift: outer rings centered, inner rings offset slightly
+  const driftX = (rng() - 0.5) * r * 0.08;
+  const driftY = (rng() - 0.5) * r * 0.08;
 
   for (let ring = 1; ring <= rings; ring++) {
     const t      = ring / (rings + 1);
-    const baseR  = t * r * 0.92;
-    const amp    = gap * (0.22 + rng() * 0.28);
-    const freq1  = 2 + Math.floor(rng() * 4);
-    const freq2  = 1 + Math.floor(rng() * 3);
-    const ph1    = rng() * Math.PI * 2;
-    const ph2    = rng() * Math.PI * 2;
-    // Each ring: unique ellipse aspect + tilt
-    const aspect = 0.72 + rng() * 0.56;   // 0.72–1.28
+    const baseR  = t * safeR;
+    const amp    = gap * (0.10 + rng() * 0.12); // never enough to reach next ring
+    const freq   = 2 + Math.floor(rng() * 4);
+    const ph     = rng() * Math.PI * 2;
+    const aspect = 0.82 + rng() * 0.36;          // 0.82–1.18, subtle
     const tilt   = rng() * Math.PI;
-    // Center drifts inward as rings shrink
-    const rcx = cx + driftX * (1 - t);
-    const rcy = cy + driftY * (1 - t);
+    const rcx    = cx + driftX * (1 - t);
+    const rcy    = cy + driftY * (1 - t);
 
     const pts: [number, number][] = [];
     for (let i = 0; i < PTS; i++) {
-      const a    = (i / PTS) * Math.PI * 2;
-      const wave = Math.sin(a * freq1 + ph1) * amp * 0.65
-                 + Math.sin(a * freq2 + ph2) * amp * 0.35;
-      const pr   = baseR + wave;
-      // Ellipse + tilt
-      const ex   =  Math.cos(a) * pr;
-      const ey   =  Math.sin(a) * pr * aspect;
+      const a  = (i / PTS) * Math.PI * 2;
+      const pr = baseR + Math.sin(a * freq + ph) * amp;
+      const ex =  Math.cos(a) * pr;
+      const ey =  Math.sin(a) * pr * aspect;
       pts.push([
         rcx + ex * Math.cos(tilt) - ey * Math.sin(tilt),
         rcy + ex * Math.sin(tilt) + ey * Math.cos(tilt),
@@ -205,9 +199,9 @@ const CLIPS: Record<string, string> = {
 };
 
 const BORDERS: Record<string, (color: string) => string> = {
-  circle:   c => `<circle cx="100" cy="100" r="82" fill="none" stroke="${c}" stroke-width="4.5"/>`,
-  square:   c => `<rect x="18" y="18" width="164" height="164" fill="none" stroke="${c}" stroke-width="4.5"/>`,
-  triangle: c => `<polygon points="100,20 182,168 18,168" fill="none" stroke="${c}" stroke-width="4.5"/>`,
+  circle:   c => `<circle cx="100" cy="100" r="82" fill="none" stroke="${c}" stroke-width="6"/>`,
+  square:   c => `<rect x="18" y="18" width="164" height="164" fill="none" stroke="${c}" stroke-width="6"/>`,
+  triangle: c => `<polygon points="100,20 182,168 18,168" fill="none" stroke="${c}" stroke-width="6"/>`,
 };
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -244,7 +238,7 @@ export function renderSeal(
   <defs>${clip}</defs>
   ${border}
   <g clip-path="url(#c)">
-    <path d="${innerPaths}" stroke="${color}" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${innerPaths}" stroke="${color}" fill="none" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>`;
 }
