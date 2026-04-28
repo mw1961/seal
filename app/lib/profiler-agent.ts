@@ -120,14 +120,6 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
     type: 'select',
     options: ['Japanese (minimal, precise)', 'Modern (clean, geometric)', 'Ancient (classical, ornate)', 'Abstract (symbolic, open)'],
   },
-  {
-    id: 'inkColor',
-    step: 7,
-    question: 'Choose your ink color.',
-    hint: 'The seal will be produced in a single solid color.',
-    type: 'select',
-    options: ['Black (#000000)', 'Deep Navy (#191970)', 'Crimson (#8B0000)', 'Forest Green (#1B4332)', 'Custom'],
-  },
 ];
 
 export function buildProfile(answers: Record<string, string | string[]>): Omit<SealProfile, 'id' | 'createdAt'> {
