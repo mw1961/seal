@@ -1,10 +1,9 @@
 /**
  * Algorithmic pattern generator for Sygneo Heritage Seals.
  * Each family's SHA-256 hash seeds a deterministic RNG → unique, repeatable patterns.
- * Zero API cost — pure mathematics.
  */
 
-// ── Seeded RNG (deterministic) ────────────────────────────────────────────────
+// ── Seeded RNG ────────────────────────────────────────────────────────────────
 
 function seedRNG(hash: string): () => number {
   let s = (parseInt(hash.slice(0, 8), 16) >>> 0) || 0x12345678;
@@ -38,13 +37,12 @@ export async function hashProfile(
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ── Angular: Maze (recursive backtracker) ─────────────────────────────────────
+// ── Angular: Maze (recursive backtracker 8×8) ─────────────────────────────────
 
 function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: number): string {
   const COLS = 8, ROWS = 8;
   const cw = w / COLS, ch = h / ROWS;
 
-  // Walls: hWalls[r][c] = top horizontal wall of cell (r,c)
   const hW = Array.from({ length: ROWS + 1 }, () => Array(COLS).fill(true));
   const vW = Array.from({ length: ROWS }, () => Array(COLS + 1).fill(true));
   const vis = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
@@ -65,7 +63,6 @@ function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: nu
   carve(Math.floor(rng() * ROWS), Math.floor(rng() * COLS));
 
   const segs: string[] = [];
-  // Horizontal walls
   for (let r = 0; r <= ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       if (hW[r][c]) {
@@ -74,7 +71,6 @@ function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: nu
       }
     }
   }
-  // Vertical walls
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c <= COLS; c++) {
       if (vW[r][c]) {
@@ -86,68 +82,59 @@ function mazePattern(rng: () => number, ox: number, oy: number, w: number, h: nu
   return segs.join(' ');
 }
 
-// ── Organic: Bold elliptical rings — strictly inside shape ────────────────────
+// ── Organic: N-petal flower (chrysanthemum / kamon) ───────────────────────────
 
 function organicPattern(rng: () => number, cx: number, cy: number, r: number): string {
+  const N        = 6 + Math.floor(rng() * 7);        // 6–12 petals
+  const petalR   = r * (0.68 + rng() * 0.16);        // tip distance
+  const halfW    = petalR * (0.18 + rng() * 0.16);   // petal half-width
+  const tension  = 0.48 + rng() * 0.16;              // bezier pull along axis
+  const rotation = rng() * (Math.PI * 2 / N);
   const paths: string[] = [];
-  const rings  = 4 + Math.floor(rng() * 2); // 4–5 rings
-  const PTS    = 64;
-  const safeR  = r * 0.82; // hard ceiling — always inside clip + border gap
-  const gap    = safeR / (rings + 1);
 
-  // Subtle drift: outer rings centered, inner rings offset slightly
-  const driftX = (rng() - 0.5) * r * 0.08;
-  const driftY = (rng() - 0.5) * r * 0.08;
+  for (let i = 0; i < N; i++) {
+    const a    = (i / N) * Math.PI * 2 + rotation;
+    const tipX = cx + Math.cos(a) * petalR;
+    const tipY = cy + Math.sin(a) * petalR;
+    const perp = a + Math.PI / 2;
+    const axDist = petalR * tension;
 
-  for (let ring = 1; ring <= rings; ring++) {
-    const t      = ring / (rings + 1);
-    const baseR  = t * safeR;
-    const amp    = gap * (0.10 + rng() * 0.12); // never enough to reach next ring
-    const freq   = 2 + Math.floor(rng() * 4);
-    const ph     = rng() * Math.PI * 2;
-    const aspect = 0.82 + rng() * 0.36;          // 0.82–1.18, subtle
-    const tilt   = rng() * Math.PI;
-    const rcx    = cx + driftX * (1 - t);
-    const rcy    = cy + driftY * (1 - t);
+    const cp1x = cx + Math.cos(a) * axDist + Math.cos(perp) * halfW;
+    const cp1y = cy + Math.sin(a) * axDist + Math.sin(perp) * halfW;
+    const cp2x = tipX + Math.cos(perp) * halfW * 0.28;
+    const cp2y = tipY + Math.sin(perp) * halfW * 0.28;
+    const cp3x = tipX - Math.cos(perp) * halfW * 0.28;
+    const cp3y = tipY - Math.sin(perp) * halfW * 0.28;
+    const cp4x = cx + Math.cos(a) * axDist - Math.cos(perp) * halfW;
+    const cp4y = cy + Math.sin(a) * axDist - Math.sin(perp) * halfW;
 
-    const pts: [number, number][] = [];
-    for (let i = 0; i < PTS; i++) {
-      const a  = (i / PTS) * Math.PI * 2;
-      const pr = baseR + Math.sin(a * freq + ph) * amp;
-      const ex =  Math.cos(a) * pr;
-      const ey =  Math.sin(a) * pr * aspect;
-      pts.push([
-        rcx + ex * Math.cos(tilt) - ey * Math.sin(tilt),
-        rcy + ex * Math.sin(tilt) + ey * Math.cos(tilt),
-      ]);
-    }
-
-    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
-    for (let i = 0; i < PTS; i++) {
-      const p0 = pts[(i - 1 + PTS) % PTS];
-      const p1 = pts[i];
-      const p2 = pts[(i + 1) % PTS];
-      const p3 = pts[(i + 2) % PTS];
-      const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
-      const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
-      const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
-      const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
-      d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
-    }
-    paths.push(d + ' Z');
+    paths.push(
+      `M${cx.toFixed(1)},${cy.toFixed(1)} ` +
+      `C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${tipX.toFixed(1)},${tipY.toFixed(1)} ` +
+      `C${cp3x.toFixed(1)},${cp3y.toFixed(1)} ${cp4x.toFixed(1)},${cp4y.toFixed(1)} ${cx.toFixed(1)},${cy.toFixed(1)} Z`
+    );
   }
+
+  // Center circle
+  const cr = r * 0.10;
+  paths.push(
+    `M${(cx + cr).toFixed(1)},${cy.toFixed(1)} ` +
+    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx - cr).toFixed(1)},${cy.toFixed(1)} ` +
+    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx + cr).toFixed(1)},${cy.toFixed(1)}`
+  );
+
   return paths.join(' ');
 }
 
-// ── Hybrid: Gear outer ring + radial spokes inner (compass / lantern) ────────
+// ── Hybrid: Gear outer ring + nested rotating polygons ────────────────────────
 
 function hybridPattern(rng: () => number, cx: number, cy: number, r: number): string {
-  // Outer gear segments
+  // Outer gear ring
   const outerParts: string[] = [];
-  const segments = 12 + Math.floor(rng() * 6);
+  const segments = 12 + Math.floor(rng() * 7);
   for (let i = 0; i < segments; i++) {
     const a1 = (i / segments) * Math.PI * 2;
-    const a2 = ((i + 0.72 + rng() * 0.2) / segments) * Math.PI * 2;
+    const a2 = ((i + 0.68 + rng() * 0.22) / segments) * Math.PI * 2;
     const r1 = r * 0.56 + rng() * r * 0.08;
     const r2 = r * 0.80 + rng() * r * 0.05;
     outerParts.push(
@@ -158,34 +145,31 @@ function hybridPattern(rng: () => number, cx: number, cy: number, r: number): st
     );
   }
 
-  // Inner radial spokes — alternating long/short, slight curve
+  // Inner nested polygons — each ring rotated progressively
+  const N       = 4 + Math.floor(rng() * 4);         // 4–7 sides
+  const rings   = 3 + Math.floor(rng() * 2);          // 3–4 rings
+  const baseRot = rng() * (Math.PI * 2 / N);
+  const rotStep = (Math.PI / N) * (0.28 + rng() * 0.44);
   const innerParts: string[] = [];
-  const spokes = 16 + Math.floor(rng() * 9); // 16–24 spokes
-  const innerStart = r * 0.08;
-  const longR  = r * 0.48;
-  const shortR = r * 0.30 + rng() * r * 0.08;
-  const curveMag = r * 0.07;
 
-  for (let i = 0; i < spokes; i++) {
-    const a    = (i / spokes) * Math.PI * 2;
-    const tipR = i % 2 === 0 ? longR : shortR;
-    const sx   = cx + Math.cos(a) * innerStart;
-    const sy   = cy + Math.sin(a) * innerStart;
-    const ex   = cx + Math.cos(a) * tipR;
-    const ey   = cy + Math.sin(a) * tipR;
-    // Slight perpendicular curve — direction alternates per spoke
-    const perp = a + Math.PI / 2;
-    const side = (rng() - 0.5) * 2 > 0 ? 1 : -1;
-    const mid  = tipR * 0.55;
-    const cpx  = cx + Math.cos(a) * mid + Math.cos(perp) * curveMag * side;
-    const cpy  = cy + Math.sin(a) * mid + Math.sin(perp) * curveMag * side;
-    innerParts.push(
-      `M${sx.toFixed(1)},${sy.toFixed(1)} Q${cpx.toFixed(1)},${cpy.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`
-    );
+  for (let ring = 1; ring <= rings; ring++) {
+    const ringR = (ring / (rings + 0.6)) * r * 0.50;
+    const rot   = baseRot + ring * rotStep;
+    const pts: string[] = [];
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2 + rot;
+      pts.push(`${i === 0 ? 'M' : 'L'}${(cx + Math.cos(a) * ringR).toFixed(1)},${(cy + Math.sin(a) * ringR).toFixed(1)}`);
+    }
+    innerParts.push(pts.join(' ') + ' Z');
   }
 
-  // Small center circle
-  innerParts.push(`M${(cx + r * 0.08).toFixed(1)},${cy.toFixed(1)} A${(r * 0.08).toFixed(1)},${(r * 0.08).toFixed(1)} 0 1 1 ${(cx - r * 0.08).toFixed(1)},${cy.toFixed(1)} A${(r * 0.08).toFixed(1)},${(r * 0.08).toFixed(1)} 0 1 1 ${(cx + r * 0.08).toFixed(1)},${cy.toFixed(1)}`);
+  // Small center dot
+  const cr = r * 0.07;
+  innerParts.push(
+    `M${(cx + cr).toFixed(1)},${cy.toFixed(1)} ` +
+    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx - cr).toFixed(1)},${cy.toFixed(1)} ` +
+    `A${cr.toFixed(1)},${cr.toFixed(1)} 0 1 1 ${(cx + cr).toFixed(1)},${cy.toFixed(1)}`
+  );
 
   return [...outerParts, ...innerParts].join(' ');
 }
@@ -215,15 +199,13 @@ export function renderSeal(
   shape:   ShapeType,
   color:   string,
 ): string {
-  // Use different hash slices per pattern to ensure variation across the 3 types
   const offset = pattern === 'angular' ? 0 : pattern === 'organic' ? 16 : 32;
   const rng = seedRNG(hash.slice(offset, offset + 8) + hash.slice(0, offset));
 
   let innerPaths = '';
 
   if (pattern === 'angular') {
-    // Clip the maze to a square region centered at 100,100
-    const m = 24; // margin inside shape
+    const m = 24;
     innerPaths = mazePattern(rng, m + 4, m + 4, 200 - m * 2 - 8, 200 - m * 2 - 8);
   } else if (pattern === 'organic') {
     innerPaths = organicPattern(rng, 100, 100, 78);
