@@ -101,26 +101,30 @@ export default function HomePage() {
     setPhase('generating');
     setError('');
     try {
-      const res = await fetch('/api/generate-nine', {
+      const res = await fetch('/api/generate-recraft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          origin:     profile.roots.origin,
-          occupation: profile.roots.historicOccupation,
+          origin:     Array.isArray(currentAnswers.origin) ? currentAnswers.origin : [profile.roots.origin],
+          occupation: Array.isArray(currentAnswers.occupation) ? currentAnswers.occupation : [profile.roots.historicOccupation],
           values:     profile.values,
+          style:      currentAnswers.style ?? 'modern (clean, geometric)',
           color:      inkColor,
-          variant:    v,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Generation failed');
+      // Recraft returns { seals: [{variant, svg, error}] }
+      const sealOptions = (data.seals as {variant: number; svg: string | null; error: string | null}[])
+        .filter(s => s.svg)
+        .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: s.svg! }));
       setSealHistory(prev => {
         const next = [...prev];
-        next[v] = data.seals;
+        next[v] = sealOptions;
         return next;
       });
       setCurrentSet(v);
-      setHash(data.hash);
+      setHash('');
       setPhase('results');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Generation failed');
@@ -237,6 +241,9 @@ export default function HomePage() {
         <p style={{ fontSize: 12, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
           Crafting your heritage marks...
         </p>
+        <p style={{ fontSize: 11, color: C.muted, marginTop: 12, fontFamily: 'Helvetica, Arial, sans-serif' }}>
+          This takes about 30 seconds
+        </p>
         <div style={{ marginTop: 32, display: 'flex', gap: 8 }}>
           {[0,1,2].map(i => (
             <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: C.gold, animation: `pulse 1.2s ease-in-out ${i * 0.4}s infinite` }} />
@@ -273,12 +280,9 @@ export default function HomePage() {
 
   // ── Results ──────────────────────────────────────────────────────────────────
   if (phase === 'results') {
-    const shapes   = ['circle', 'square'];
-    const patterns = ['angular', 'organic'];
-
     return (
       <main style={{ minHeight: '100vh', background: C.bg, padding: '40px 24px', fontFamily: 'Georgia, serif', color: C.text }}>
-        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
@@ -289,49 +293,22 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Color picker */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 32, alignItems: 'center' }}>
-            <span style={{ fontSize: 9, letterSpacing: '0.2em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Ink</span>
-            {COLORS.map(c => (
-              <button key={c.value} onClick={() => handleColorChange(c.value)} title={c.label}
-                style={{ width: 28, height: 28, borderRadius: '50%', background: c.hex, border: `3px solid ${color === c.value ? C.gold : 'transparent'}`, cursor: 'pointer', outline: color === c.value ? `1px solid ${C.gold}` : 'none', outlineOffset: 2 }} />
-            ))}
+          {/* 2×2 grid — 4 Recraft variants */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 8 }}>
+            {seals.map((seal, idx) => {
+              const isSelected = chosen === idx;
+              return (
+                <button key={idx} onClick={() => setChosen(isSelected ? null : idx)}
+                  style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+                  <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    dangerouslySetInnerHTML={{ __html: seal.svg }} />
+                  <span style={{ fontSize: 9, color: isSelected ? C.gold : C.muted, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                    {isSelected ? '✓ Selected' : `Option ${idx + 1}`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-
-          {/* Pattern type labels */}
-          <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr 1fr', gap: 10, marginBottom: 8 }}>
-            <div />
-            {patterns.map(p => (
-              <div key={p} style={{ textAlign: 'center', fontSize: 9, letterSpacing: '0.2em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', paddingBottom: 4 }}>
-                {PATTERN_LABELS[p]}
-              </div>
-            ))}
-          </div>
-
-          {/* 2×2 grid */}
-          {shapes.map((shape, si) => (
-            <div key={shape} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 1fr', gap: 10, marginBottom: 10, alignItems: 'center' }}>
-              <div style={{ fontSize: 9, letterSpacing: '0.15em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', textAlign: 'right', paddingRight: 12 }}>
-                {SHAPE_LABELS[shape]}
-              </div>
-              {patterns.map((pattern, pi) => {
-                const idx = si * 2 + pi;
-                const seal = seals[idx];
-                const isSelected = chosen === idx;
-                return (
-                  <button key={pattern} onClick={() => setChosen(isSelected ? null : idx)}
-                    style={{ border: `2px solid ${isSelected ? C.gold : C.border}`, background: isSelected ? 'rgba(139,115,85,0.06)' : C.surface, padding: 12, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'all 0.2s' }}>
-                    {seal && (
-                      <div style={{ width: 160, height: 160 }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
-                    )}
-                    {isSelected && (
-                      <span style={{ fontSize: 9, color: C.gold, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>✓ Selected</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
 
           {/* Notes + Confirm */}
           {chosen !== null && (
