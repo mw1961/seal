@@ -18,7 +18,7 @@ async function generateImage(prompt: string): Promise<string> {
     body: JSON.stringify({
       input: {
         prompt,
-        style: 'vector_illustration/graphic',
+        style: 'digital_illustration/2d_art_poster',
         aspect_ratio: '1:1',
       },
     }),
