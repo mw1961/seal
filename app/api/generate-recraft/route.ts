@@ -145,6 +145,7 @@ async function callVectorizerAPI(imageUrl: string): Promise<string> {
   formData.append('output.file_format', 'svg');
   formData.append('processing.max_colors', '2'); // strict black + white
   formData.append('output.group_by', 'none');
+  formData.append('mode', process.env.NODE_ENV === 'production' ? 'test' : 'test'); // upgrade to 'production' after subscribing
 
   const credentials = Buffer.from(`${apiId}:${apiSecret}`).toString('base64');
   const res = await fetch('https://vectorizer.ai/api/v1/vectorize', {
