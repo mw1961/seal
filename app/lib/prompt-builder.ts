@@ -87,34 +87,34 @@ function getRegionGeometry(origins: string[]): string {
 // ── Occupation → pure geometric motif ────────────────────────────────────────
 
 const OCCUPATION_GEOMETRY: Record<string, string> = {
-  farmer:       'radial spoke wheel with grain-arc segments',
-  shepherd:     'concentric oval rings with dot border',
-  fisherman:    'diamond wave grid with curved crossing lines',
-  sailor:       'eight-point compass rose geometric',
-  merchant:     'two-pan balance geometry, symmetric triangles',
-  banker:       'nested squares with diagonal crossing lines',
-  craftsman:    'interlocking gear-tooth ring pattern',
-  blacksmith:   'bold diamond with angular hammer-head cross',
-  carpenter:    'mitered corner frame with diagonal inlay',
-  weaver:       'over-under diagonal grid lattice pattern',
-  potter:       'concentric circles with radial dividing lines',
+  farmer:       'radial spoke wheel with twelve equal segments',
+  shepherd:     'concentric oval rings with uniform dot border',
+  fisherman:    'diamond grid lattice with curved crossing diagonals',
+  sailor:       'eight-point star with concentric ring border',
+  merchant:     'two symmetric triangles balanced on horizontal axis',
+  banker:       'nested squares rotated 45 degrees with diagonal lines',
+  craftsman:    'interlocking gear-tooth ring with inner hexagon',
+  blacksmith:   'bold diamond polygon with angular cross arms',
+  carpenter:    'mitered corner frame with diagonal inlay grid',
+  weaver:       'over-under diagonal lattice grid pattern',
+  potter:       'concentric circles with radial dividing spokes',
   jeweler:      'faceted octagon with inner star geometry',
-  baker:        'bold pinwheel of equal triangular segments',
+  baker:        'bold pinwheel of eight equal triangular segments',
   miner:        'bold X-chevron with concentric square border',
-  physician:    'square-cross geometry with concentric ring',
-  scholar:      'bold open-book geometry as two triangles',
-  soldier:      'bold angular shield geometry, chevron center',
-  judge:        'symmetric bisected circle with balance arms',
-  artist:       'bold golden-ratio spiral geometry',
-  musician:     'concentric wave arcs, equal spacing',
-  architect:    'bold geometric arch with proportional grid',
-  engineer:     'bold cog-wheel geometry with triangular teeth',
-  writer:       'angular diagonal spiral',
-  diplomat:     'two interlocked rings, balanced geometry',
-  hunter:       'bold angular arrow-head with concentric rings',
+  physician:    'bold plus geometry with concentric ring border',
+  scholar:      'two bold right-angle triangles forming chevron',
+  soldier:      'bold pentagonal shield geometry with chevron',
+  judge:        'symmetric balanced scale geometry, pure triangles',
+  artist:       'bold Fibonacci spiral geometry',
+  musician:     'concentric arc rings with equal spacing',
+  architect:    'bold semicircle arch with proportional grid',
+  engineer:     'bold twelve-tooth cog wheel geometry',
+  writer:       'angular diagonal spiral with bold strokes',
+  diplomat:     'two interlocked rings, perfectly balanced',
+  hunter:       'bold angular chevron with concentric ring border',
   gardener:     'hexagonal grid with bold center diamond',
-  inventor:     'burst of radial lines with inner hexagon',
-  priest:       'concentric ring sunburst, no cross or crescent',
+  inventor:     'radial burst of lines with inner hexagon ring',
+  priest:       'concentric sunburst rings without cross or crescent',
   default:      'bold interlocking concentric ring geometry',
 };
 
@@ -221,7 +221,7 @@ export function buildSealPrompts(profile: {
   const valueGeo    = getValueGeometry(profile.values);
   const styleLang   = getStyleLanguage(profile.style);
 
-  const base = `heritage family seal, STRICTLY GEOMETRIC shapes only: circles rings polygons lines triangles interlace patterns, ${STAMP_REQUIREMENTS}, ${FORBIDDEN}`;
+  const base = `heraldic stamp emblem design, STRICTLY GEOMETRIC shapes only: circles rings polygons lines triangles interlace patterns, square format 1:1 aspect ratio, ${STAMP_REQUIREMENTS}, ${FORBIDDEN}`;
 
   return [
     // Variant 1 — occupation geometry + chosen style

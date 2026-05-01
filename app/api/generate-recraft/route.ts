@@ -49,7 +49,19 @@ async function generateSVG(prompt: string): Promise<string> {
 
   const svgRes = await fetch(svgUrl);
   if (!svgRes.ok) throw new Error(`Failed to fetch SVG: ${svgRes.status}`);
-  return svgRes.text();
+  let svg = await svgRes.text();
+
+  // Normalize SVG: force square viewBox and responsive size
+  svg = svg.replace(/<svg([^>]*)>/, (_match, attrs: string) => {
+    // Remove existing width/height attrs, add responsive ones
+    const cleaned = attrs
+      .replace(/\s+width="[^"]*"/g, '')
+      .replace(/\s+height="[^"]*"/g, '')
+      .replace(/\s+viewBox="[^"]*"/g, '');
+    return `<svg${cleaned} width="100%" height="100%" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet">`;
+  });
+
+  return svg;
 }
 
 export async function POST(request: NextRequest) {
