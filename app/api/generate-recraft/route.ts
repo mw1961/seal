@@ -70,16 +70,29 @@ VALUES metaphors:
   Truth → three concentric perfect circles (unwavering consistency)
   Default → spiral with clear bold strokes
 
-STRICTLY FORBIDDEN:
-- NO crosshair patterns — a circle with lines crossing through the center = gun sight = BANNED
-- NO lines passing through the exact center point (150,150) — lines must stop before center
-- NO star polygons of any kind — no alternating long/short radii
-- NO 5-pointed or 6-pointed stars
-- NO religious symbols: no crosses, no crescents, no Stars of David, no OM, no ankh
+ALLOWED SVG ELEMENTS ONLY — use nothing else:
+- <circle> — for rings, dots, arcs
+- <rect> — for squares and rectangles (use transform="rotate(N 150 150)" to rotate)
+- <line> — for individual straight lines (must NOT pass through center 150,150)
+- <path> — for arcs and curves using A (arc) and C (curve) commands only
+
+BANNED ELEMENTS — do NOT use these under any circumstances:
+- NO <polygon> — this always produces stars or star-like shapes. NEVER USE IT.
+- NO <polyline>
+- NO <ellipse>
+
+STRICTLY FORBIDDEN content:
+- NO crosshair: no circle + lines crossing through center (150,150) = gun sight
+- NO lines passing through the exact center point (150,150)
+- NO star shapes of any kind (no pointy alternating shapes)
+- NO eye shapes: no oval/almond/lens shape with a dot = "Eye of Providence" / Illuminati symbol — STRICTLY BANNED
+- NO iris, pupil, or any shape that resembles an eye
+- NO religious symbols: crosses, crescents, Stars of David, OM, ankh
 - NO national symbols or flags
 - NO text, letters, numbers
-- NO animals, faces, human figures
-- NO offensive or militaristic imagery
+- NO animals, faces, human figures, hands
+- NO offensive, conspiratorial, or militaristic imagery
+- NO masonic symbols
 - NO thin strokes under 9px
 - All 4 designs MUST be visually distinct from each other`;
 
@@ -131,12 +144,10 @@ export async function POST(request: NextRequest) {
     const parsed = JSON.parse(jsonMatch[0]) as { svgs?: string[] };
     if (!parsed.svgs?.length) throw new Error('No SVGs');
 
-    // Validate: reject any SVG containing a star polygon (10-point polygon)
+    // Validate: reject any SVG using <polygon> (always creates stars)
     const validated = parsed.svgs.map((svg, i) => {
-      const isStarPolygon = /points="[^"]*"/.test(svg) &&
-        (svg.match(/\d+\.\d+,\d+\.\d+/g) || []).length === 10;
-      if (isStarPolygon) {
-        console.warn(`SVG ${i} contains star polygon — using fallback`);
+      if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) {
+        console.warn(`SVG ${i} contains banned polygon — using fallback`);
         return fallbackSvg(i);
       }
       return svg;
