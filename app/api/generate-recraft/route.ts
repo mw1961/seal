@@ -1,214 +1,153 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { SVG_SYSTEM, BATCH_VOCABULARY } from '@/app/lib/seal-prompt';
+import { SINGLE_SVG_SYSTEM, SINGLE_SVG_SHAPES, SVG_SYSTEM, BATCH_VOCABULARY } from '@/app/lib/seal-prompt';
+import { generateMazeSvg } from '@/app/lib/maze-generator';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ── Fallback SVGs — clean geometric, no banned elements ──────────────────────
+// Shape rotation per batch — guarantees no repeats across SVGs 1-4
+const BATCH_SHAPES = [
+  ['arcs',         'rotated_rects', 'radial_lines', 'rings'],
+  ['rings',        'cultural',      'arcs',         'rotated_rects'],
+  ['radial_lines', 'rings',         'cultural',     'arcs'],
+  ['rotated_rects','arcs',          'rings',         'cultural'],
+];
 
+const BORDERS = {
+  circle: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
+  square: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
+};
+
+const SVG_ROLES = [
+  { border: 'circle', lead: 'ORIGIN' },
+  { border: 'square', lead: 'OCCUPATION' },
+  { border: 'circle', lead: 'VALUES' },
+  { border: 'square', lead: 'SYNTHESIS of all three' },
+];
+
+// Fallback for a single SVG slot
 function fallbackSvg(i: number): string {
-  const mazePath = `M 48 48 L 48 80 L 80 80  M 115 42 L 115 74 L 147 74  M 178 48 L 210 48 L 210 80  M 245 48 L 245 80 L 213 80  M 42 110 L 74 110 L 74 142  M 115 108 L 115 140  M 178 108 L 210 108 L 210 140 L 178 140  M 245 110 L 213 110  M 48 175 L 48 207 L 80 207  M 115 175 L 147 175 L 147 207  M 178 178 L 178 210  M 242 175 L 242 207 L 210 207  M 52 242 L 84 242  M 115 240 L 115 255 L 147 255 L 147 240  M 180 242 L 212 242 L 212 255  M 245 240 L 245 255`;
   const defs = [
-    {
-      border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="9"/><rect x="110" y="110" width="80" height="80" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/>`,
-    },
-    {
-      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<rect x="65" y="65" width="170" height="170" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/><circle cx="150" cy="150" r="45" fill="none" stroke="black" stroke-width="9"/>`,
-    },
-    {
-      border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><rect x="100" y="100" width="100" height="100" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/>`,
-    },
-    {
-      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<circle cx="150" cy="150" r="85" fill="none" stroke="black" stroke-width="9"/><rect x="115" y="115" width="70" height="70" fill="none" stroke="black" stroke-width="9"/>`,
-    },
-    {
-      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<path d="${mazePath}" fill="none" stroke="black" stroke-width="11"/>`,
-    },
-    {
-      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<path d="${mazePath}" fill="none" stroke="black" stroke-width="11"/>`,
-    },
+    { b: BORDERS.circle, inner: `<circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="9"/><rect x="110" y="110" width="80" height="80" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/>` },
+    { b: BORDERS.square, inner: `<rect x="65" y="65" width="170" height="170" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/><circle cx="150" cy="150" r="45" fill="none" stroke="black" stroke-width="9"/>` },
+    { b: BORDERS.circle, inner: `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><rect x="100" y="100" width="100" height="100" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/>` },
+    { b: BORDERS.square, inner: `<circle cx="150" cy="150" r="85" fill="none" stroke="black" stroke-width="9"/><rect x="115" y="115" width="70" height="70" fill="none" stroke="black" stroke-width="9"/>` },
   ];
   const d = defs[i % defs.length];
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${d.border}${d.inner}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${d.b}${d.inner}</svg>`;
 }
 
-// Returns true if line segment (x1,y1)→(x2,y2) passes through (150,150) within 5px tolerance
-function segmentPassesThroughCenter(x1: number, y1: number, x2: number, y2: number): boolean {
-  const cx = 150, cy = 150, tol = 5;
-  const dx = x2 - x1, dy = y2 - y1;
-  const lenSq = dx * dx + dy * dy;
-  if (lenSq < 1) return false;
-  const t = Math.max(0, Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / lenSq));
-  const nearX = x1 + t * dx, nearY = y1 + t * dy;
-  return Math.abs(nearX - cx) < tol && Math.abs(nearY - cy) < tol;
+// Validate a single SVG
+function validateSvg(svg: string, idx: number): string {
+  if (!svg || svg.length < 50) return fallbackSvg(idx);
+  if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) return fallbackSvg(idx);
+  if (/M[\d\s.,]+L[\d\s.,]+L[\d\s.,]+Z/i.test(svg.replace(/\s+/g, ' '))) return fallbackSvg(idx);
+
+  for (const [tag] of svg.matchAll(/<line[^>]+>/gi)) {
+    const x1 = parseFloat(tag.match(/x1="([\d.]+)"/)?.[1] ?? '0');
+    const y1 = parseFloat(tag.match(/y1="([\d.]+)"/)?.[1] ?? '0');
+    const x2 = parseFloat(tag.match(/x2="([\d.]+)"/)?.[1] ?? '0');
+    const y2 = parseFloat(tag.match(/y2="([\d.]+)"/)?.[1] ?? '0');
+    const dx = x2-x1, dy = y2-y1, lenSq = dx*dx+dy*dy;
+    if (lenSq < 1) continue;
+    const t = Math.max(0, Math.min(1, ((150-x1)*dx+(150-y1)*dy)/lenSq));
+    if (Math.abs(x1+t*dx-150) < 5 && Math.abs(y1+t*dy-150) < 5) return fallbackSvg(idx);
+  }
+
+  const circles = [...svg.matchAll(/<circle[^>]+>/gi)].map(m => {
+    const tag = m[0];
+    return {
+      cx:   parseFloat(tag.match(/cx="([\d.]+)"/)?.[1] ?? '150'),
+      cy:   parseFloat(tag.match(/cy="([\d.]+)"/)?.[1] ?? '150'),
+      r:    parseFloat(tag.match(/\br="([\d.]+)"/)?.[1] ?? '0'),
+      fill: tag.match(/fill="([^"]+)"/)?.[1] ?? 'none',
+    };
+  });
+  const centeredRings = circles.filter(c => Math.hypot(c.cx-150, c.cy-150) < 5 && c.fill !== 'black').length;
+  const centeredDot   = circles.some(c => Math.hypot(c.cx-150, c.cy-150) < 5 && c.fill === 'black' && c.r < 25);
+  if (centeredRings >= 2 && centeredDot) return fallbackSvg(idx);
+
+  for (const [tag] of svg.matchAll(/<circle[^>]+>/gi)) {
+    const cx   = parseFloat(tag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
+    const cy   = parseFloat(tag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
+    const r    = parseFloat(tag.match(/\br="([\d.]+)"/)?.[1] ?? '0');
+    const fill = tag.match(/fill="([^"]+)"/)?.[1] ?? 'none';
+    const dist = Math.hypot(cx-150, cy-150);
+    if (dist > 35 && r > 15 && r < 80) return fallbackSvg(idx);
+    if (fill === 'black' && dist > 20 && r < 20) return fallbackSvg(idx);
+  }
+
+  return svg;
 }
 
-// ── Route ────────────────────────────────────────────────────────────────────
+// Generate one SVG via a focused single-SVG call
+async function generateOneSvg(
+  origin: string, occupation: string, values: string,
+  role: { border: string; lead: string },
+  shapeType: string,
+  idx: number,
+): Promise<string> {
+  const shapeInstruction = SINGLE_SVG_SHAPES[shapeType] ?? SINGLE_SVG_SHAPES.rings;
+  const borderSvg = role.border === 'circle' ? BORDERS.circle : BORDERS.square;
+  const prompt = `Family profile — Origin: ${origin} | Occupation: ${occupation} | Values: ${values}
+
+Design role: Lead with ${role.lead} geometry.
+Border: ${role.border} — use exactly: ${borderSvg}
+
+SHAPE TYPE LOCKED — you must use ONLY this shape family:
+${shapeInstruction}
+
+Output a single complete SVG. Start with:
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="300" height="300" fill="white"/>
+${borderSvg}`;
+
+  try {
+    const res = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1200,
+      system: SINGLE_SVG_SYSTEM,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const text = res.content[0].type === 'text' ? res.content[0].text : '';
+    // Extract SVG — Claude outputs raw SVG
+    const match = text.match(/<svg[\s\S]*<\/svg>/i);
+    const svg = match ? match[0] : '';
+    return validateSvg(svg, idx);
+  } catch {
+    return fallbackSvg(idx);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { origin, occupation, values, variant = 0, usedShapes = '' } = await request.json();
+    const { origin, occupation, values, variant = 0 } = await request.json();
+    const originStr     = Array.isArray(origin)     ? origin.join(', ')     : origin;
+    const occupationStr = Array.isArray(occupation) ? occupation.join(', ') : occupation;
+    const valuesStr     = Array.isArray(values)     ? values.join(', ')     : values;
 
-    const batchInstruction = BATCH_VOCABULARY[variant % BATCH_VOCABULARY.length];
+    const shapes = BATCH_SHAPES[variant % BATCH_SHAPES.length];
 
-    const avoidLine = usedShapes
-      ? `\n\nALREADY SHOWN TO CUSTOMER — DO NOT REPEAT THESE SHAPE FAMILIES:\n${usedShapes}\nEach new SVG MUST use a completely different primary shape from any already shown.`
-      : '';
+    // Run SVGs 1-4 in parallel, each with a different locked shape type
+    const [svg0, svg1, svg2, svg3] = await Promise.all(
+      SVG_ROLES.map((role, i) =>
+        generateOneSvg(originStr, occupationStr, valuesStr, role, shapes[i], i)
+      )
+    );
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      system: SVG_SYSTEM,
-      messages: [{
-        role: 'user',
-        content: `Origin: ${Array.isArray(origin) ? origin.join(', ') : origin}\nOccupation: ${Array.isArray(occupation) ? occupation.join(', ') : occupation}\nValues: ${Array.isArray(values) ? values.join(', ') : values}${avoidLine}\n\n${batchInstruction}`,
-      }],
-    });
+    // SVGs 5 & 6: programmatic maze (deterministic, always valid, always different)
+    const svg4 = generateMazeSvg(variant * 100 + 5);
+    const svg5 = generateMazeSvg(variant * 100 + 6);
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
-
-    const jsonMatch = text.match(/\{[\s\S]*"svgs"[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON in response');
-
-    const parsed = JSON.parse(jsonMatch[0]) as { svgs?: string[] };
-    if (!parsed.svgs?.length) throw new Error('No SVGs');
-
-    // Code-level validation: replace any SVG that violates production rules
-    const validated = parsed.svgs.map((svg, i) => {
-      // Banned elements
-      if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) {
-        console.warn(`SVG ${i} banned polygon/polyline — fallback`);
-        return fallbackSvg(i);
-      }
-      // Triangle paths: M ... L ... L ... Z (exactly 3 vertices)
-      if (/M[\d\s.,]+L[\d\s.,]+L[\d\s.,]+Z/i.test(svg.replace(/\s+/g, ' '))) {
-        console.warn(`SVG ${i} triangle path — fallback`);
-        return fallbackSvg(i);
-      }
-      // Lines passing through center (150,150) — proper segment intersection check
-      for (const [lineTag] of svg.matchAll(/<line[^>]+>/gi)) {
-        const x1 = parseFloat(lineTag.match(/x1="([\d.]+)"/)?.[1] ?? '0');
-        const y1 = parseFloat(lineTag.match(/y1="([\d.]+)"/)?.[1] ?? '0');
-        const x2 = parseFloat(lineTag.match(/x2="([\d.]+)"/)?.[1] ?? '0');
-        const y2 = parseFloat(lineTag.match(/y2="([\d.]+)"/)?.[1] ?? '0');
-        if (segmentPassesThroughCenter(x1, y1, x2, y2)) {
-          console.warn(`SVG ${i} line through center — fallback`);
-          return fallbackSvg(i);
-        }
-      }
-      // Off-center circles and filled dots
-      for (const [circleTag] of svg.matchAll(/<circle[^>]+>/gi)) {
-        const cx   = parseFloat(circleTag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
-        const cy   = parseFloat(circleTag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
-        const r    = parseFloat(circleTag.match(/\br="([\d.]+)"/)?.[1] ?? '150');
-        const fill = circleTag.match(/fill="([^"]+)"/)?.[1] ?? 'none';
-        const dist = Math.sqrt((cx - 150) ** 2 + (cy - 150) ** 2);
-        // Medium circle far from center = lollipop
-        if (dist > 35 && r > 15 && r < 80) {
-          console.warn(`SVG ${i} off-center circle (lollipop) — fallback`);
-          return fallbackSvg(i);
-        }
-        // Filled dot off-center = eye effect
-        if (fill === 'black' && dist > 20 && r < 20) {
-          console.warn(`SVG ${i} off-center filled dot (eye) — fallback`);
-          return fallbackSvg(i);
-        }
-      }
-      // Rotated rect out-of-bounds: corner distance must be ≤ 117 (square safe zone)
-      for (const [rectTag] of svg.matchAll(/<rect[^>]+>/gi)) {
-        const w    = parseFloat(rectTag.match(/width="([\d.]+)"/)?.[1]  ?? '0');
-        const h    = parseFloat(rectTag.match(/height="([\d.]+)"/)?.[1] ?? '0');
-        const x    = parseFloat(rectTag.match(/\bx="([\d.]+)"/)?.[1]   ?? '150');
-        const y    = parseFloat(rectTag.match(/\by="([\d.]+)"/)?.[1]   ?? '150');
-        const hasRotate = /transform="rotate/.test(rectTag);
-        if (hasRotate && w > 0 && h > 0) {
-          // Corner distance from center for a centered rotated rect
-          const cx = x + w / 2, cy = y + h / 2;
-          const cornerDist = Math.sqrt((cx - 150) ** 2 + (cy - 150) ** 2) + Math.sqrt((w / 2) ** 2 + (h / 2) ** 2);
-          if (cornerDist > 120) {
-            console.warn(`SVG ${i} rotated rect out of bounds (cornerDist=${cornerDist.toFixed(0)}) — fallback`);
-            return fallbackSvg(i);
-          }
-        } else if (!hasRotate && w > 0 && h > 0) {
-          // Non-rotated rect: check edges directly
-          if (x < 30 || y < 30 || x + w > 270 || y + h > 270) {
-            console.warn(`SVG ${i} rect out of bounds — fallback`);
-            return fallbackSvg(i);
-          }
-        }
-      }
-      // Thin-only composition: 2 concentric rings + only a short path accent = not producible
-      const circleCount = [...svg.matchAll(/<circle[^>]+>/gi)].length;
-      const pathCount   = [...svg.matchAll(/<path[^>]+>/gi)].length;
-      const rectCount   = [...svg.matchAll(/<rect[^>]+>/gi)].length;
-      const lineCount   = [...svg.matchAll(/<line[^>]+>/gi)].length;
-      const innerShapes = circleCount + pathCount + rectCount + lineCount - 1; // subtract background rect
-      if (circleCount >= 3 && innerShapes <= 3 && rectCount === 0) {
-        // 3+ circles (border + 2 rings) with no rect and only circles/short paths = weak composition
-        const paths = [...svg.matchAll(/d="([^"]+)"/gi)];
-        const hasSubstantialPath = paths.some(([, d]) => d.length > 60);
-        if (!hasSubstantialPath && pathCount <= 1) {
-          console.warn(`SVG ${i} thin-only composition (rings + tiny arc) — fallback`);
-          return fallbackSvg(i);
-        }
-      }
-      // Bullseye: 2+ concentric circles at center + a filled dot at center = weapon target
-      const allCircles = [...svg.matchAll(/<circle[^>]+>/gi)].map(m => {
-        const tag  = m[0];
-        const cx   = parseFloat(tag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
-        const cy   = parseFloat(tag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
-        const r    = parseFloat(tag.match(/\br="([\d.]+)"/)?.[1] ?? '0');
-        const fill = tag.match(/fill="([^"]+)"/)?.[1] ?? 'none';
-        return { cx, cy, r, fill };
-      });
-      const centeredRings = allCircles.filter(c => Math.sqrt((c.cx-150)**2+(c.cy-150)**2) < 5 && c.fill !== 'black').length;
-      const centeredDot   = allCircles.some(c => Math.sqrt((c.cx-150)**2+(c.cy-150)**2) < 5 && c.fill === 'black' && c.r < 25);
-      if (centeredRings >= 2 && centeredDot) {
-        console.warn(`SVG ${i} bullseye pattern — fallback`);
-        return fallbackSvg(i);
-      }
-      // Overlapping rotated rects: if 3+ rects share the same center with different rotations → crossing
-      const rects = [...svg.matchAll(/<rect[^>]+transform="rotate\((\d+)[^"]*\)"[^>]*>/gi)].map(m => {
-        const angle = parseFloat(m[1]);
-        const w = parseFloat(m[0].match(/width="([\d.]+)"/)?.[1] ?? '0');
-        const h = parseFloat(m[0].match(/height="([\d.]+)"/)?.[1] ?? '0');
-        return { angle, w, h };
-      });
-      if (rects.length >= 3) {
-        console.warn(`SVG ${i} 3+ rotated rects (overlapping) — fallback`);
-        return fallbackSvg(i);
-      }
-      // X shape: detect multi-segment paths where two segments cross center
-      const pathSegs = [...svg.matchAll(/d="([^"]+)"/gi)];
-      for (const [, d] of pathSegs) {
-        const moves = [...d.matchAll(/M\s*([\d.]+)\s+([\d.]+)\s+L\s*([\d.]+)\s+([\d.]+)/gi)];
-        if (moves.length >= 2) {
-          const crosses = moves.filter(([,x1,y1,x2,y2]) =>
-            segmentPassesThroughCenter(+x1, +y1, +x2, +y2)
-          );
-          if (crosses.length >= 2) {
-            console.warn(`SVG ${i} X/cross path — fallback`);
-            return fallbackSvg(i);
-          }
-        }
-      }
-      return svg;
-    });
-
-    const seals = validated.map((svg, i) => ({ variant: i, svg, imageUrl: null, error: null }));
+    const svgs = [svg0, svg1, svg2, svg3, svg4, svg5];
+    const seals = svgs.map((svg, i) => ({ variant: i, svg, imageUrl: null, error: null }));
     return NextResponse.json({ seals });
 
   } catch (err) {
     console.error('generate-seal:', err);
-    const seals = [0, 1, 2, 3].map(i => ({ variant: i, imageUrl: null, error: null, svg: fallbackSvg(i) }));
+    const seals = [0,1,2,3,4,5].map(i => ({ variant: i, imageUrl: null, error: null, svg: fallbackSvg(i) }));
     return NextResponse.json({ seals });
   }
 }

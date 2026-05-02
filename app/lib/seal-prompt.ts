@@ -198,6 +198,44 @@ const SECTION_H = `STRICTLY FORBIDDEN content:
 
 // ── Assembled master prompt ───────────────────────────────────────────────────
 
+// ── Single-SVG system prompt (used for parallel per-SVG generation) ──────────
+
+export const SINGLE_SVG_SYSTEM = `You are a heritage seal designer. Output ONLY a single valid SVG — no JSON, no markdown, no explanation. Just the raw SVG element.
+
+RULES:
+- viewBox="0 0 300 300", start with <rect width="300" height="300" fill="white"/>
+- Minimum stroke-width="9" everywhere
+- Only fill="black", fill="none", or fill="white"
+- Safe zone: radius 108 for circle border, x:33-267 y:33-267 for square border
+- Minimum 6px gap between strokes
+- No overlapping shapes
+- NO polygon, polyline, ellipse
+- NO lines through center (150,150)
+- NO triangle shapes, NO stars, NO crosshair, NO bullseye, NO eye shapes
+- NO religious, masonic, or offensive symbols`;
+
+export const SINGLE_SVG_SHAPES: Record<string, string> = {
+  arcs: `USE ONLY: <path> elements with arc (A) commands and/or <circle> rings. No rects. No lines.
+Build the design from 2-3 bold partial arcs at different radii and sweep angles.
+Example approach: one 220° arc at r=85, one 130° arc at r=50 rotated 90° relative to the first.`,
+
+  rotated_rects: `USE ONLY: <rect> elements with transform="rotate(N 150 150)". No circles as main element. No arc paths.
+Build the design from 2 nested rects at different rotation angles (e.g. 15° and 52°), clearly spaced.
+The corner distance from center = √(w/2²+h/2²) must be ≤108. Size rects accordingly.`,
+
+  radial_lines: `USE ONLY: <line> elements arranged radially + one <circle> ring as frame.
+Draw 6 or 8 short bold lines at equal angles (60° or 45° apart). Each line starts at r=58 and ends at r=96.
+NO line passes through center (150,150). Add one bold ring at r=108 as the outer frame.`,
+
+  rings: `USE ONLY: <circle> elements at clearly different radii (e.g. r=108, r=72, r=38).
+3 concentric rings with intentionally unequal spacing. NO filled dot at center. NO lines.
+Inner ring may be bolder (stroke-width="14") to create visual hierarchy.`,
+
+  cultural: `USE ONLY cultural craft geometry: an 8-sided octagon path or Celtic triple arc or radial segment pattern.
+Octagon: <path d="M 150 45 L 213 87 L 255 150 L 213 213 L 150 255 L 87 213 L 45 150 L 87 87 Z"> — scaled to fit safe zone.
+Celtic triple arc: three 110° arc paths evenly spaced at r=75, each gap equal.`,
+};
+
 export const SVG_SYSTEM = [
   SECTION_A,
   SECTION_B,
