@@ -72,6 +72,7 @@ ORIGIN metaphors:
   France → radial wedge with bold outer ring
   Spain → 8-segment circle (Mozarab geometry)
   Turkey → 12-segment concentric ring (Ottoman tile)
+  Citizen of the World → open spiral expanding outward beyond any single ring (boundless, unrooted)
   Default → concentric bold rings
 
 OCCUPATION metaphors:
@@ -85,6 +86,7 @@ OCCUPATION metaphors:
   Physician → two concentric circles with bold outer ring, open top arc
   Craftsman → diamond rotated inside a ring (stone setting)
   Blacksmith → bold pentagon with centered dot (anvil geometry)
+  Free Spirit / No defined profession → open asymmetric arc composition, no fixed center (fluid, undefined)
   Default → concentric rings with bold dividing lines
 
 VALUES metaphors:

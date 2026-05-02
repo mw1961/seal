@@ -37,6 +37,7 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
     min: 1,
     max: 3,
     options: [
+      'Citizen of the World',
       'Afghanistan','Algeria','Angola','Argentina','Armenia','Australia','Austria',
       'Azerbaijan','Belarus','Belgium','Bolivia','Bosnia','Brazil','Bulgaria',
       'Cambodia','Canada','Chile','China','Colombia','Croatia','Cuba',
@@ -90,6 +91,7 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
       'Hunter / Tracker',
       'Gardener / Botanist',
       'Inventor / Scientist',
+      'Free Spirit / No defined profession',
     ],
   },
   {
