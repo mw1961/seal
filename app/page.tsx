@@ -53,6 +53,8 @@ const STYLES = [
 // Exclude shape and style — style is now chosen in the results screen
 const QUESTIONS = PROFILER_QUESTIONS.filter(q => q.id !== 'shape' && q.id !== 'style');
 
+const MAX_GENERATIONS = 4; // total API calls per session (first + 3 more)
+
 export default function HomePage() {
   const [step, setStep]                       = useState(0);
   const [answers, setAnswers]                 = useState<Record<string, string | string[]>>({});
@@ -72,6 +74,9 @@ export default function HomePage() {
   const [generating, setGenerating]           = useState(false);
   const [activeStyle, setActiveStyle]         = useState(STYLES[1].full);
   const [elapsed, setElapsed]                 = useState(0);
+  const [genCount, setGenCount]               = useState(0);
+
+  const genLimitReached = genCount >= MAX_GENERATIONS;
 
   useEffect(() => {
     if (!generating) { setElapsed(0); return; }
@@ -138,6 +143,7 @@ export default function HomePage() {
         .filter(s => s.svg || s.imageUrl)
         .map(s => ({ pattern: `variant-${s.variant}`, shape: 'circle', svg: s.svg || '', imageUrl: s.imageUrl || undefined }));
       setAllSeals(prev => isFirst ? newSeals : [...prev, ...newSeals]);
+      setGenCount(prev => prev + 1);
       setPhase('results');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Generation failed');
@@ -233,7 +239,7 @@ export default function HomePage() {
     setStep(0); setAnswers({}); setCurrentText(''); setSelectedOptions([]);
     setPhase('questionnaire'); setAllSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
-    setCustomInput(''); setCustomPending(''); setVariant(0); setActiveStyle(STYLES[1].full);
+    setCustomInput(''); setCustomPending(''); setVariant(0); setActiveStyle(STYLES[1].full); setGenCount(0);
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -310,9 +316,9 @@ export default function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 10, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Style</span>
               {STYLES.map(s => (
-                <button key={s.label} onClick={() => handleStyleChange(s.full)} disabled={generating}
+                <button key={s.label} onClick={() => handleStyleChange(s.full)} disabled={generating || genLimitReached}
                   title={`Switch to ${s.full}`}
-                  style={{ padding: '4px 10px', border: `1px solid ${activeStyle === s.full ? C.gold : C.border}`, background: activeStyle === s.full ? 'rgba(139,115,85,0.08)' : 'transparent', color: activeStyle === s.full ? C.gold : C.muted, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', transition: 'all 0.2s' }}>
+                  style={{ padding: '4px 10px', border: `1px solid ${activeStyle === s.full ? C.gold : C.border}`, background: activeStyle === s.full ? 'rgba(139,115,85,0.08)' : 'transparent', color: activeStyle === s.full ? C.gold : (generating || genLimitReached) ? C.muted : C.muted, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: (generating || genLimitReached) ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', transition: 'all 0.2s', opacity: genLimitReached ? 0.4 : 1 }}>
                   {s.label}
                 </button>
               ))}
@@ -369,16 +375,33 @@ export default function HomePage() {
 
           {error && <p style={{ color: '#A0522D', fontSize: 13, marginTop: 16 }}>{error}</p>}
 
+          {/* Generation limit notice */}
+          {genLimitReached && (
+            <div style={{ border: `1px solid ${C.border}`, padding: '12px 16px', marginTop: 16, background: 'rgba(139,115,85,0.04)' }}>
+              <p style={{ fontSize: 11, color: C.sub, margin: 0, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em' }}>
+                You&apos;ve explored {MAX_GENERATIONS} sets of designs. Please select your favourite mark above to proceed.
+              </p>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 12, marginTop: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => handleGenerateMore()} disabled={generating}
-              style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: generating ? C.muted : C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-              {generating ? 'Generating...' : '↻ Generate 4 More'}
-            </button>
+            {!genLimitReached && (
+              <button onClick={() => handleGenerateMore()} disabled={generating}
+                style={{ padding: '10px 24px', border: `1px solid ${C.gold}`, background: 'transparent', color: generating ? C.muted : C.gold, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                {generating ? 'Generating...' : `↻ Generate 4 More (${MAX_GENERATIONS - genCount} left)`}
+              </button>
+            )}
             <button onClick={handleReset}
               style={{ padding: '10px 24px', border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif' }}>
               Start Over
             </button>
           </div>
+          {/* Generation counter */}
+          {!genLimitReached && genCount > 0 && (
+            <p style={{ fontSize: 9, color: C.muted, marginTop: 10, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.15em' }}>
+              {genCount} / {MAX_GENERATIONS} generation{genCount > 1 ? 's' : ''} used
+            </p>
+          )}
         </div>
       </main>
     );
