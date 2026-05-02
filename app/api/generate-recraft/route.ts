@@ -118,6 +118,21 @@ export async function POST(request: NextRequest) {
           return fallbackSvg(i);
         }
       }
+      // Thin-only composition: 2 concentric rings + only a short path accent = not producible
+      const circleCount = [...svg.matchAll(/<circle[^>]+>/gi)].length;
+      const pathCount   = [...svg.matchAll(/<path[^>]+>/gi)].length;
+      const rectCount   = [...svg.matchAll(/<rect[^>]+>/gi)].length;
+      const lineCount   = [...svg.matchAll(/<line[^>]+>/gi)].length;
+      const innerShapes = circleCount + pathCount + rectCount + lineCount - 1; // subtract background rect
+      if (circleCount >= 3 && innerShapes <= 3 && rectCount === 0) {
+        // 3+ circles (border + 2 rings) with no rect and only circles/short paths = weak composition
+        const paths = [...svg.matchAll(/d="([^"]+)"/gi)];
+        const hasSubstantialPath = paths.some(([, d]) => d.length > 60);
+        if (!hasSubstantialPath && pathCount <= 1) {
+          console.warn(`SVG ${i} thin-only composition (rings + tiny arc) — fallback`);
+          return fallbackSvg(i);
+        }
+      }
       // Bullseye: 2+ concentric circles at center + a filled dot at center = weapon target
       const allCircles = [...svg.matchAll(/<circle[^>]+>/gi)].map(m => {
         const tag  = m[0];

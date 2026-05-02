@@ -180,7 +180,8 @@ const SECTION_H = `STRICTLY FORBIDDEN content:
 - NO open decorative strokes that look like eyebrows, hills, or random curves disconnected from the composition
 - NO X shape: never draw two diagonal lines that cross each other — this looks like a cross/crosshair. FORBIDDEN even as a path: M x1 y1 L x2 y2 M x3 y3 L x4 y4 where the two segments cross.
 - NO off-center filled dots: fill="black" circles must be exactly at cx="150" cy="150" — a filled dot at any other position creates an eye-like appearance
-- NO standalone arc: a single open <path> arc that forms the entire inner motif is not a complete seal design. Every design must have at least one closed or bounded shape.
+- NO standalone arc accent: a small partial arc or dash used as the ONLY inner accent alongside concentric rings is not producible — it vanishes in rubber engraving. Every design must have at least one SOLID ANCHOR: a closed ring, a rotated rect, or a bold filled/stroked shape that occupies clear visual weight at the center.
+- NO thin-only compositions: two concentric circles + one small floating element = not enough substance. The inner motif must have comparable visual weight to the border.
 - All 4 designs MUST be visually distinct from each other — no two designs may use the same base shape combination
 - VARIETY RULE: across the 4 SVGs, you must use at least 3 different primary shape types. If SVG 1 uses concentric circles, SVG 2 must NOT also use concentric circles as its main motif. Rotate through: rings, rotated rects, arcs, radial lines.`;
 
