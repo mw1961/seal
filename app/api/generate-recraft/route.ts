@@ -109,6 +109,21 @@ export async function POST(request: NextRequest) {
           return fallbackSvg(i);
         }
       }
+      // Bullseye: 2+ concentric circles at center + a filled dot at center = weapon target
+      const allCircles = [...svg.matchAll(/<circle[^>]+>/gi)].map(m => {
+        const tag  = m[0];
+        const cx   = parseFloat(tag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
+        const cy   = parseFloat(tag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
+        const r    = parseFloat(tag.match(/\br="([\d.]+)"/)?.[1] ?? '0');
+        const fill = tag.match(/fill="([^"]+)"/)?.[1] ?? 'none';
+        return { cx, cy, r, fill };
+      });
+      const centeredRings = allCircles.filter(c => Math.sqrt((c.cx-150)**2+(c.cy-150)**2) < 5 && c.fill !== 'black').length;
+      const centeredDot   = allCircles.some(c => Math.sqrt((c.cx-150)**2+(c.cy-150)**2) < 5 && c.fill === 'black' && c.r < 25);
+      if (centeredRings >= 2 && centeredDot) {
+        console.warn(`SVG ${i} bullseye pattern — fallback`);
+        return fallbackSvg(i);
+      }
       // X shape: detect multi-segment paths where two segments cross center
       const pathSegs = [...svg.matchAll(/d="([^"]+)"/gi)];
       for (const [, d] of pathSegs) {

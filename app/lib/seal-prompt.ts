@@ -136,6 +136,7 @@ BANNED ELEMENTS — do NOT use these under any circumstances:
 
 const SECTION_H = `STRICTLY FORBIDDEN content:
 - NO crosshair: no circle + lines crossing through center (150,150) = gun sight. LINES MUST NEVER PASS THROUGH (150,150).
+- NO bullseye/target: concentric circles + a filled dot at center = weapon target. If you use concentric rings, there must be NO filled dot at center — use a rotated rect or open arc instead.
 - NO target/bullseye: no concentric rings with ANY line through center — looks like a weapon sight
 - NO triangle or pyramid shapes of any kind — triangles always read as masonic/Illuminati symbols. NEVER USE <path> commands that form a triangle. NEVER draw 3-sided shapes.
 - NO star shapes of any kind (no pointy alternating shapes)
@@ -153,7 +154,8 @@ const SECTION_H = `STRICTLY FORBIDDEN content:
 - NO X shape: never draw two diagonal lines that cross each other — this looks like a cross/crosshair. FORBIDDEN even as a path: M x1 y1 L x2 y2 M x3 y3 L x4 y4 where the two segments cross.
 - NO off-center filled dots: fill="black" circles must be exactly at cx="150" cy="150" — a filled dot at any other position creates an eye-like appearance
 - NO standalone arc: a single open <path> arc that forms the entire inner motif is not a complete seal design. Every design must have at least one closed or bounded shape.
-- All 4 designs MUST be visually distinct from each other — no two designs may use the same base shape combination`;
+- All 4 designs MUST be visually distinct from each other — no two designs may use the same base shape combination
+- VARIETY RULE: across the 4 SVGs, you must use at least 3 different primary shape types. If SVG 1 uses concentric circles, SVG 2 must NOT also use concentric circles as its main motif. Rotate through: rings, rotated rects, arcs, radial lines.`;
 
 // ── Assembled master prompt ───────────────────────────────────────────────────
 
