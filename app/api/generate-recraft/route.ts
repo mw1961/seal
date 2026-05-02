@@ -103,12 +103,6 @@ function validateSvg(svg: string, i: number): string {
   return svg;
 }
 
-const VARIETY_HINTS = [
-  `For SVGs 1-4: SVG1=bold arcs or Celtic spiral, SVG2=nested rotated squares, SVG3=radial tick marks, SVG4=synthesis ring+rect.`,
-  `For SVGs 1-4: SVG1=concentric rings varied spacing, SVG2=cultural octagon path, SVG3=bold crescent arc, SVG4=synthesis.`,
-  `For SVGs 1-4: SVG1=Celtic triple arc, SVG2=double rotated squares, SVG3=radial spokes, SVG4=synthesis.`,
-  `For SVGs 1-4: SVG1=single bold arc 240°, SVG2=nested squares 0° and 45°, SVG3=8 tick marks in ring, SVG4=synthesis.`,
-];
 
 export async function POST(request: NextRequest) {
   try {
