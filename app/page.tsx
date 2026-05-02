@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PROFILER_QUESTIONS, buildProfile } from './lib/profiler-agent';
 import type { ProfilerQuestion } from './lib/profiler-agent';
 
@@ -43,8 +43,15 @@ interface SealOption {
   imageUrl?: string;
 }
 
-// Questions excluding shape (no longer needed)
-const QUESTIONS = PROFILER_QUESTIONS.filter(q => q.id !== 'shape');
+const STYLES = [
+  { label: 'Japanese', full: 'Japanese (minimal, precise)' },
+  { label: 'Modern',   full: 'Modern (clean, geometric)' },
+  { label: 'Ancient',  full: 'Ancient (classical, ornate)' },
+  { label: 'Abstract', full: 'Abstract (symbolic, open)' },
+];
+
+// Exclude shape and style — style is now chosen in the results screen
+const QUESTIONS = PROFILER_QUESTIONS.filter(q => q.id !== 'shape' && q.id !== 'style');
 
 export default function HomePage() {
   const [step, setStep]                       = useState(0);
@@ -63,7 +70,14 @@ export default function HomePage() {
   const [customPending, setCustomPending]     = useState('');
   const [variant, setVariant]                 = useState(0);
   const [generating, setGenerating]           = useState(false);
-  const [activeStyle, setActiveStyle]         = useState('');
+  const [activeStyle, setActiveStyle]         = useState(STYLES[1].full);
+  const [elapsed, setElapsed]                 = useState(0);
+
+  useEffect(() => {
+    if (!generating) { setElapsed(0); return; }
+    const t = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [generating]);
 
   // Apply ink color by replacing black in SVG strings
   const seals = allSeals.map(s => ({
@@ -163,11 +177,21 @@ export default function HomePage() {
     setColor(newColor);
   }
 
-  async function handleGenerateMore(styleOverride?: string) {
+  // Switch style: replace all seals with new style
+  async function handleStyleChange(style: string) {
+    if (generating) return;
+    setActiveStyle(style);
+    setAllSeals([]);
+    setChosen(null);
+    setVariant(0);
+    await fetchMoreSeals(answers, 0, false, style);
+  }
+
+  // Append 4 more in current style
+  async function handleGenerateMore() {
     const next = variant + 1;
     setVariant(next);
-    if (styleOverride) setActiveStyle(styleOverride);
-    await fetchMoreSeals(answers, next, false, (styleOverride ?? activeStyle) || undefined);
+    await fetchMoreSeals(answers, next, false, activeStyle);
   }
 
   async function handleConfirm() {
@@ -209,7 +233,7 @@ export default function HomePage() {
     setStep(0); setAnswers({}); setCurrentText(''); setSelectedOptions([]);
     setPhase('questionnaire'); setAllSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
-    setCustomInput(''); setCustomPending(''); setVariant(0); setActiveStyle('');
+    setCustomInput(''); setCustomPending(''); setVariant(0); setActiveStyle(STYLES[1].full);
   }
 
   // ── Generating ──────────────────────────────────────────────────────────────
@@ -274,7 +298,7 @@ export default function HomePage() {
           </div>
 
           {/* Ink color + Style controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 10, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Ink</span>
               {COLORS.map(c => (
@@ -285,19 +309,27 @@ export default function HomePage() {
             <div style={{ width: 1, height: 20, background: C.border }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 10, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif' }}>Style</span>
-              {['Japanese', 'Modern', 'Ancient', 'Abstract'].map(s => {
-                const fullStyle = { Japanese: 'Japanese (minimal, precise)', Modern: 'Modern (clean, geometric)', Ancient: 'Ancient (classical, ornate)', Abstract: 'Abstract (symbolic, open)' }[s]!;
-                const isActive = (activeStyle || answers.style) === fullStyle;
-                return (
-                  <button key={s} onClick={() => !generating && handleGenerateMore(fullStyle)} disabled={generating}
-                    title={`Generate 4 more in ${fullStyle}`}
-                    style={{ padding: '4px 10px', border: `1px solid ${isActive ? C.gold : C.border}`, background: isActive ? 'rgba(139,115,85,0.08)' : 'transparent', color: isActive ? C.gold : C.muted, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', transition: 'all 0.2s' }}>
-                    {s}
-                  </button>
-                );
-              })}
+              {STYLES.map(s => (
+                <button key={s.label} onClick={() => handleStyleChange(s.full)} disabled={generating}
+                  title={`Switch to ${s.full}`}
+                  style={{ padding: '4px 10px', border: `1px solid ${activeStyle === s.full ? C.gold : C.border}`, background: activeStyle === s.full ? 'rgba(139,115,85,0.08)' : 'transparent', color: activeStyle === s.full ? C.gold : C.muted, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: generating ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', transition: 'all 0.2s' }}>
+                  {s.label}
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* Loading indicator */}
+          {generating && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ height: 2, background: C.border, borderRadius: 1, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: C.gold, borderRadius: 1, width: `${Math.min(95, (elapsed / 30) * 100)}%`, transition: 'width 1s linear' }} />
+              </div>
+              <p style={{ fontSize: 10, color: C.gold, letterSpacing: '0.2em', textTransform: 'uppercase', fontFamily: 'Helvetica, Arial, sans-serif', marginTop: 6 }}>
+                Crafting marks... {elapsed}s
+              </p>
+            </div>
+          )}
 
           {/* Seal grid — accumulates all generated sets */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 8 }}>

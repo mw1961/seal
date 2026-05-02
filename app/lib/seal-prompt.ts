@@ -150,6 +150,9 @@ const SECTION_H = `STRICTLY FORBIDDEN content:
 - NO thin strokes under 9px
 - NO floating/isolated shapes: every inner shape must be centered at (150,150) or clearly part of a concentric/radial composition. A circle floating off-center connected only by a line = lollipop/balloon — FORBIDDEN.
 - NO open decorative strokes that look like eyebrows, hills, or random curves disconnected from the composition
+- NO X shape: never draw two diagonal lines that cross each other — this looks like a cross/crosshair. FORBIDDEN even as a path: M x1 y1 L x2 y2 M x3 y3 L x4 y4 where the two segments cross.
+- NO off-center filled dots: fill="black" circles must be exactly at cx="150" cy="150" — a filled dot at any other position creates an eye-like appearance
+- NO standalone arc: a single open <path> arc that forms the entire inner motif is not a complete seal design. Every design must have at least one closed or bounded shape.
 - All 4 designs MUST be visually distinct from each other — no two designs may use the same base shape combination`;
 
 // ── Assembled master prompt ───────────────────────────────────────────────────

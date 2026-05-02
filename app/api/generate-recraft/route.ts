@@ -91,16 +91,36 @@ export async function POST(request: NextRequest) {
           return fallbackSvg(i);
         }
       }
-      // Off-center isolated circles (lollipop / balloon shapes)
+      // Off-center circles and filled dots
       for (const [circleTag] of svg.matchAll(/<circle[^>]+>/gi)) {
-        const cx = parseFloat(circleTag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
-        const cy = parseFloat(circleTag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
-        const r  = parseFloat(circleTag.match(/\br="([\d.]+)"/)?.[1] ?? '150');
-        const distFromCenter = Math.sqrt((cx - 150) ** 2 + (cy - 150) ** 2);
-        // Small circle far from center = decoration dot is fine, but medium circle = lollipop
-        if (distFromCenter > 35 && r > 15 && r < 80) {
-          console.warn(`SVG ${i} off-center isolated circle (lollipop) — fallback`);
+        const cx   = parseFloat(circleTag.match(/cx="([\d.]+)"/)?.[1] ?? '150');
+        const cy   = parseFloat(circleTag.match(/cy="([\d.]+)"/)?.[1] ?? '150');
+        const r    = parseFloat(circleTag.match(/\br="([\d.]+)"/)?.[1] ?? '150');
+        const fill = circleTag.match(/fill="([^"]+)"/)?.[1] ?? 'none';
+        const dist = Math.sqrt((cx - 150) ** 2 + (cy - 150) ** 2);
+        // Medium circle far from center = lollipop
+        if (dist > 35 && r > 15 && r < 80) {
+          console.warn(`SVG ${i} off-center circle (lollipop) — fallback`);
           return fallbackSvg(i);
+        }
+        // Filled dot off-center = eye effect
+        if (fill === 'black' && dist > 20 && r < 20) {
+          console.warn(`SVG ${i} off-center filled dot (eye) — fallback`);
+          return fallbackSvg(i);
+        }
+      }
+      // X shape: detect multi-segment paths where two segments cross center
+      const pathSegs = [...svg.matchAll(/d="([^"]+)"/gi)];
+      for (const [, d] of pathSegs) {
+        const moves = [...d.matchAll(/M\s*([\d.]+)\s+([\d.]+)\s+L\s*([\d.]+)\s+([\d.]+)/gi)];
+        if (moves.length >= 2) {
+          const crosses = moves.filter(([,x1,y1,x2,y2]) =>
+            segmentPassesThroughCenter(+x1, +y1, +x2, +y2)
+          );
+          if (crosses.length >= 2) {
+            console.warn(`SVG ${i} X/cross path — fallback`);
+            return fallbackSvg(i);
+          }
         }
       }
       return svg;
