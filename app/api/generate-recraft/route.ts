@@ -70,6 +70,31 @@ VALUES metaphors:
   Truth → three concentric perfect circles (unwavering consistency)
   Default → spiral with clear bold strokes
 
+STYLE LANGUAGE — apply based on the Style field in the request:
+
+Japanese (minimal, precise):
+  - Maximum 3 shapes total per SVG (including border)
+  - Large empty space — let the negative space carry meaning
+  - One dominant bold shape + at most one accent element
+  - Prefer single bold arc, single ring, or single rotated rect with nothing else
+
+Modern (clean, geometric):
+  - 3–4 shapes per SVG
+  - Perfect symmetry, sharp angles, clean interlocking forms
+  - Prefer nested geometric rings, rotated squares, precise radial divisions
+
+Ancient (classical, ornate):
+  - 4–5 shapes per SVG (maximum allowed)
+  - Layered, dense, rich — every space filled with purposeful geometry
+  - Prefer concentric rings + inner ornamental pattern + accent marks
+  - More complex path curves and multi-step arc sequences
+
+Abstract (symbolic, open):
+  - 3–4 shapes per SVG
+  - Asymmetric but balanced — shapes offset from center are encouraged
+  - Prefer open arcs, partial rings, and non-centered compositions
+  - Intentionally ambiguous geometry that suggests rather than states
+
 ALLOWED SVG ELEMENTS ONLY — use nothing else:
 - <circle> — for rings, dots, arcs
 - <rect> — for squares and rectangles (use transform="rotate(N 150 150)" to rotate)
