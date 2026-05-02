@@ -1,168 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { SVG_SYSTEM, BATCH_VOCABULARY } from '@/app/lib/seal-prompt';
 
 export const maxDuration = 30;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SVG_SYSTEM = `You are a heritage seal designer specializing in stamps for physical production — rubber and metal engraving.
-
-Output ONLY valid JSON — no markdown, no explanation:
-{"svgs":["<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>"]}
-
-CORE PRINCIPLE — every seal must be a SYNTHESIS:
-Each design combines ALL the family's parameters into one coherent geometric language.
-Do NOT illustrate just one parameter — weave origin + occupation + values + style together.
-A family from Morocco who were merchants seeking harmony: Zellige octagon geometry (origin) × balanced scales form (occupation) × interlocking arcs (values) — all filtered through the chosen style aesthetic.
-When multiple origins are given (e.g. Morocco + Poland): layer or interlock their geometric metaphors — do not ignore any of them. Two origins = two geometric languages merged into one composition.
-The result must be UNIQUE to THIS specific family — not a generic geometric pattern.
-
-MANDATORY LAYOUT:
-- SVG 1: CIRCLE border — lead with ORIGIN geometry, accent with occupation or values
-- SVG 2: SQUARE border — lead with OCCUPATION geometry, accent with origin or values
-- SVG 3: CIRCLE border — lead with VALUES geometry, accent with origin or occupation
-- SVG 4: SQUARE border — full synthesis: all three parameters combined, filtered through the requested STYLE
-
-STAMP PRODUCTION CONSTRAINTS — every shape must survive physical engraving:
-- viewBox="0 0 300 300", always start with <rect width="300" height="300" fill="white"/>
-- Circle border: <circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>
-- Square border: <rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>
-- Minimum stroke-width="9" everywhere — thinner lines collapse in rubber/metal engraving
-- Only fill="black" or fill="none" + stroke="black" — no grays, no gradients
-- Max 5 shapes per SVG (including border) — more detail is lost at stamp scale (2–4 cm)
-- Safe zone: stay within radius 108 for circle, 15px inset for square
-- All shapes must be CLOSED or clearly bounded — open paths that don't form a region will not engrave cleanly
-- Minimum gap between any two strokes: 6px — closer lines merge into a blob when pressed into rubber
-
-VISUAL METAPHORS — geometry with meaning (not just abstract shapes):
-
-ORIGIN metaphors:
-  Morocco → interlocking octagon grid (Zellige tile geometry)
-  Poland → nested diamond with angular folk ornament
-  Israel → interlaced hexagonal ring (ancient craftwork)
-  Japan → single bold arc + dot (Ma — space and essence)
-  Germany → precision interlocked rectangles (engineering heritage)
-  Italy → circular wedge rosette (Renaissance craft wheel)
-  Russia → bold concentric squares (folk lacquer geometry)
-  UK/Ireland → triple arc spiral (ancient Celtic form)
-  Greece → angular meander pattern inside ring
-  France → radial wedge with bold outer ring
-  Spain → 8-segment circle (Mozarab geometry)
-  Turkey → 12-segment concentric ring (Ottoman tile)
-  Default → concentric bold rings
-
-OCCUPATION metaphors:
-  Farmer → wheel of 8 radiating spokes (harvest wheel, spokes end before center)
-  Carpenter/Builder → interlocking L-shapes forming a square (joinery)
-  Merchant → two balanced semicircles facing each other (scales of exchange)
-  Scholar → nested squares at 45° offset (pages, layers of knowledge)
-  Sailor → octagon with 4 long diagonal lines (navigation, bearing)
-  Engineer → octagon with equal flat-cut edges (precision gear form)
-  Musician → 3 concentric arcs on one side (sound waves emanating)
-  Physician → two concentric circles with bold outer ring, open top arc
-  Craftsman → diamond rotated inside a ring (stone setting)
-  Blacksmith → bold pentagon with centered dot (anvil geometry)
-  Default → concentric rings with bold dividing lines
-
-VALUES metaphors:
-  Resilience → bold concentric rings growing outward (each ring = a challenge overcome)
-  Freedom → open spiral from center (growing, expanding, unbound)
-  Harmony → two equal interlocking arcs forming a lens shape
-  Loyalty → two interlocked rings of equal size
-  Wisdom → hexagon with inner hexagon rotated 30° (nested insight)
-  Courage → bold diamond pointing upward inside ring (direction, strength)
-  Creativity → irregular but balanced arcs offset from center (organic rhythm)
-  Justice → two equal arcs balanced on a horizontal axis
-  Prosperity → expanding octagon rings (growing outward in steps)
-  Community → three equal overlapping circles (connection, overlap)
-  Honor → octagon inside circle with bold ring (protection + precision)
-  Truth → three concentric perfect circles (unwavering consistency)
-  Default → spiral with clear bold strokes
-
-STYLE LANGUAGE — apply based on the Style field in the request:
-
-Japanese (minimal, precise):
-  - Maximum 3 shapes total per SVG (including border)
-  - Large empty space — let the negative space carry meaning
-  - One dominant bold shape + at most one accent element
-  - Prefer single bold arc, single ring, or single rotated rect with nothing else
-
-Modern (clean, geometric):
-  - 3–4 shapes per SVG
-  - Perfect symmetry, sharp angles, clean interlocking forms
-  - Prefer nested geometric rings, rotated squares, precise radial divisions
-
-Ancient (classical, ornate):
-  - 4–5 shapes per SVG (maximum allowed)
-  - Layered, dense, rich — every space filled with purposeful geometry
-  - Prefer concentric rings + inner ornamental pattern + accent marks
-  - More complex path curves and multi-step arc sequences
-
-Abstract (symbolic, open):
-  - 3–4 shapes per SVG
-  - Asymmetric but balanced — shapes offset from center are encouraged
-  - Prefer open arcs, partial rings, and non-centered compositions
-  - Intentionally ambiguous geometry that suggests rather than states
-
-ALLOWED SVG ELEMENTS ONLY — use nothing else:
-- <circle> — for rings, dots, arcs
-- <rect> — for squares and rectangles (use transform="rotate(N 150 150)" to rotate)
-- <line> — for individual straight lines (must NOT pass through center 150,150)
-- <path> — for arcs and curves using A (arc) and C (curve) commands only
-
-BANNED ELEMENTS — do NOT use these under any circumstances:
-- NO <polygon> — this always produces stars or star-like shapes. NEVER USE IT.
-- NO <polyline>
-- NO <ellipse>
-
-STRICTLY FORBIDDEN content:
-- NO crosshair: no circle + lines crossing through center (150,150) = gun sight. LINES MUST NEVER PASS THROUGH (150,150).
-- NO target/bullseye: no concentric rings with ANY line through center — looks like a weapon sight
-- NO triangle or pyramid shapes of any kind — triangles always read as masonic/Illuminati symbols. NEVER USE <path> commands that form a triangle. NEVER draw 3-sided shapes.
-- NO star shapes of any kind (no pointy alternating shapes)
-- NO eye shapes: no oval/almond/lens shape with a dot = "Eye of Providence" / Illuminati symbol — STRICTLY BANNED
-- NO iris, pupil, or any shape that resembles an eye
-- NO religious symbols: crosses, crescents, Stars of David, OM, ankh
-- NO national symbols or flags
-- NO text, letters, numbers
-- NO animals, faces, human figures, hands
-- NO offensive, conspiratorial, or militaristic imagery
-- NO masonic symbols (pyramids, triangles, compasses, all-seeing eye)
-- NO thin strokes under 9px
-- All 4 designs MUST be visually distinct from each other — no two designs may use the same base shape combination`;
-
-// ── Fallback SVG (clean geometric, no stars) ─────────────────────────────────
+// ── Fallback SVGs — clean geometric, no banned elements ──────────────────────
 
 function fallbackSvg(i: number): string {
   const defs = [
     {
       border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<polygon points="150,55 237,97 237,203 150,245 63,203 63,97" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="30" fill="black"/>`,
+      inner:  `<circle cx="150" cy="150" r="80" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="40" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="12" fill="black"/>`,
     },
     {
       border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><line x1="150" y1="60" x2="150" y2="240" stroke="black" stroke-width="9"/><line x1="60" y1="150" x2="240" y2="150" stroke="black" stroke-width="9"/><line x1="86" y1="86" x2="214" y2="214" stroke="black" stroke-width="9"/><line x1="214" y1="86" x2="86" y2="214" stroke="black" stroke-width="9"/>`,
+      inner:  `<rect x="65" y="65" width="170" height="170" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/><circle cx="150" cy="150" r="45" fill="none" stroke="black" stroke-width="9"/>`,
     },
     {
       border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="50" fill="none" stroke="black" stroke-width="9"/><polygon points="150,65 224,107 224,193 150,235 76,193 76,107" fill="none" stroke="black" stroke-width="9"/>`,
+      inner:  `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><rect x="100" y="100" width="100" height="100" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/>`,
     },
     {
       border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-      inner:  `<rect x="65" y="65" width="170" height="170" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/><circle cx="150" cy="150" r="45" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="14" fill="black"/>`,
+      inner:  `<circle cx="150" cy="150" r="75" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="40" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="12" fill="black"/>`,
     },
   ];
   const d = defs[i % defs.length];
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${d.border}${d.inner}</svg>`;
 }
 
-// Each batch gets a different primary shape vocabulary to force variety
-const BATCH_VOCABULARY = [
-  `SHAPE VOCABULARY THIS BATCH: Use CURVED ARCS and SPIRALS as primary shapes. Build from <path> arc commands (A) and <circle> rings. Avoid hexagons, spoked wheels, and rotated rectangles.`,
-  `SHAPE VOCABULARY THIS BATCH: Use ROTATED RECTANGLES and NESTED SQUARES as primary shapes. Build from <rect transform="rotate(N 150 150)"> and nested squares at different angles. Avoid circles as the main motif.`,
-  `SHAPE VOCABULARY THIS BATCH: Use CONCENTRIC RINGS at VARIED SPACING as primary shapes. Rings of very different radii (e.g. r=40, r=80, r=108). Avoid hexagons, diamonds, and spoked wheels.`,
-  `SHAPE VOCABULARY THIS BATCH: Use RADIAL LINES and SEGMENTED ARCS as primary shapes. Build from <line> elements at angles (never through center) and partial <path> arcs. Avoid solid circles and rectangles as borders of inner motifs.`,
-];
+// ── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
@@ -182,37 +51,35 @@ export async function POST(request: NextRequest) {
 
     const text = response.content[0].type === 'text' ? response.content[0].text : '';
 
-    // Extract JSON
     const jsonMatch = text.match(/\{[\s\S]*"svgs"[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON in response');
 
     const parsed = JSON.parse(jsonMatch[0]) as { svgs?: string[] };
     if (!parsed.svgs?.length) throw new Error('No SVGs');
 
-    // Validate: reject banned shapes
+    // Code-level validation: replace any SVG that violates production rules
     const validated = parsed.svgs.map((svg, i) => {
+      // Banned elements
       if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) {
-        console.warn(`SVG ${i} contains banned polygon — using fallback`);
+        console.warn(`SVG ${i} contains banned polygon/polyline — fallback`);
         return fallbackSvg(i);
       }
-      // Detect triangle paths: M...L...L...Z with only 3 line segments
-      const trianglePattern = /M\s*[\d.,\s]+\s*L\s*[\d.,\s]+\s*L\s*[\d.,\s]+\s*Z/i;
-      if (trianglePattern.test(svg.replace(/\s+/g, ' '))) {
-        console.warn(`SVG ${i} contains triangle path — using fallback`);
+      // Triangle paths: M ... L ... L ... Z (exactly 3 vertices)
+      if (/M[\d\s.,]+L[\d\s.,]+L[\d\s.,]+Z/i.test(svg.replace(/\s+/g, ' '))) {
+        console.warn(`SVG ${i} contains triangle path — fallback`);
         return fallbackSvg(i);
       }
-      // Detect crosshair: any line passing through center (x1=150 or x2=150 AND y1=150 or y2=150)
-      const lines = [...svg.matchAll(/<line[^>]+>/gi)];
-      for (const [lineTag] of lines) {
+      // Lines passing through center (150,150) — crosshair / gun sight
+      for (const [lineTag] of svg.matchAll(/<line[^>]+>/gi)) {
         const x1 = parseFloat(lineTag.match(/x1="([\d.]+)"/)?.[1] ?? '0');
         const y1 = parseFloat(lineTag.match(/y1="([\d.]+)"/)?.[1] ?? '0');
         const x2 = parseFloat(lineTag.match(/x2="([\d.]+)"/)?.[1] ?? '0');
         const y2 = parseFloat(lineTag.match(/y2="([\d.]+)"/)?.[1] ?? '0');
-        const passesThroughCenter =
+        if (
           (Math.abs(x1 - 150) < 5 || Math.abs(x2 - 150) < 5) &&
-          (Math.abs(y1 - 150) < 5 || Math.abs(y2 - 150) < 5);
-        if (passesThroughCenter) {
-          console.warn(`SVG ${i} contains crosshair line — using fallback`);
+          (Math.abs(y1 - 150) < 5 || Math.abs(y2 - 150) < 5)
+        ) {
+          console.warn(`SVG ${i} contains crosshair line — fallback`);
           return fallbackSvg(i);
         }
       }
