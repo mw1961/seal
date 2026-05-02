@@ -82,8 +82,9 @@ BANNED ELEMENTS — do NOT use these under any circumstances:
 - NO <ellipse>
 
 STRICTLY FORBIDDEN content:
-- NO crosshair: no circle + lines crossing through center (150,150) = gun sight
-- NO lines passing through the exact center point (150,150)
+- NO crosshair: no circle + lines crossing through center (150,150) = gun sight. LINES MUST NEVER PASS THROUGH (150,150).
+- NO target/bullseye: no concentric rings with ANY line through center — looks like a weapon sight
+- NO triangle or pyramid shapes of any kind — triangles always read as masonic/Illuminati symbols. NEVER USE <path> commands that form a triangle. NEVER draw 3-sided shapes.
 - NO star shapes of any kind (no pointy alternating shapes)
 - NO eye shapes: no oval/almond/lens shape with a dot = "Eye of Providence" / Illuminati symbol — STRICTLY BANNED
 - NO iris, pupil, or any shape that resembles an eye
@@ -92,9 +93,9 @@ STRICTLY FORBIDDEN content:
 - NO text, letters, numbers
 - NO animals, faces, human figures, hands
 - NO offensive, conspiratorial, or militaristic imagery
-- NO masonic symbols
+- NO masonic symbols (pyramids, triangles, compasses, all-seeing eye)
 - NO thin strokes under 9px
-- All 4 designs MUST be visually distinct from each other`;
+- All 4 designs MUST be visually distinct from each other — no two designs may use the same base shape combination`;
 
 // ── Fallback SVG (clean geometric, no stars) ─────────────────────────────────
 
@@ -144,11 +145,32 @@ export async function POST(request: NextRequest) {
     const parsed = JSON.parse(jsonMatch[0]) as { svgs?: string[] };
     if (!parsed.svgs?.length) throw new Error('No SVGs');
 
-    // Validate: reject any SVG using <polygon> (always creates stars)
+    // Validate: reject banned shapes
     const validated = parsed.svgs.map((svg, i) => {
       if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) {
         console.warn(`SVG ${i} contains banned polygon — using fallback`);
         return fallbackSvg(i);
+      }
+      // Detect triangle paths: M...L...L...Z with only 3 line segments
+      const trianglePattern = /M\s*[\d.,\s]+\s*L\s*[\d.,\s]+\s*L\s*[\d.,\s]+\s*Z/i;
+      if (trianglePattern.test(svg.replace(/\s+/g, ' '))) {
+        console.warn(`SVG ${i} contains triangle path — using fallback`);
+        return fallbackSvg(i);
+      }
+      // Detect crosshair: any line passing through center (x1=150 or x2=150 AND y1=150 or y2=150)
+      const lines = [...svg.matchAll(/<line[^>]+>/gi)];
+      for (const [lineTag] of lines) {
+        const x1 = parseFloat(lineTag.match(/x1="([\d.]+)"/)?.[1] ?? '0');
+        const y1 = parseFloat(lineTag.match(/y1="([\d.]+)"/)?.[1] ?? '0');
+        const x2 = parseFloat(lineTag.match(/x2="([\d.]+)"/)?.[1] ?? '0');
+        const y2 = parseFloat(lineTag.match(/y2="([\d.]+)"/)?.[1] ?? '0');
+        const passesThroughCenter =
+          (Math.abs(x1 - 150) < 5 || Math.abs(x2 - 150) < 5) &&
+          (Math.abs(y1 - 150) < 5 || Math.abs(y2 - 150) < 5);
+        if (passesThroughCenter) {
+          console.warn(`SVG ${i} contains crosshair line — using fallback`);
+          return fallbackSvg(i);
+        }
       }
       return svg;
     });
