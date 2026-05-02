@@ -48,6 +48,28 @@ const QUESTIONS = PROFILER_QUESTIONS.filter(q => q.id !== 'shape' && q.id !== 's
 
 const MAX_GENERATIONS = 2; // 2 batches × 6 seals = 12 total
 
+function ShipField({ label, k, required, placeholder, shipping, setShipping, C, inline }: {
+  label: string; k: string; required?: boolean; placeholder: string;
+  shipping: Record<string, string>;
+  setShipping: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  C: Record<string, string>; inline?: boolean;
+}) {
+  return (
+    <div style={inline ? {} : { marginBottom: 14 }}>
+      <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
+        fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
+        {label}{required && <span style={{ color: C.gold }}> *</span>}
+      </label>
+      <input value={shipping[k] ?? ''}
+        onChange={e => setShipping(s => ({ ...s, [k]: e.target.value }))}
+        placeholder={placeholder}
+        style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
+          fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
+          color: C.text, outline: 'none', boxSizing: 'border-box' as const }} />
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [step, setStep]                       = useState(0);
   const [answers, setAnswers]                 = useState<Record<string, string | string[]>>({});
@@ -68,7 +90,7 @@ export default function HomePage() {
   const [elapsed, setElapsed]                 = useState(0);
   const [genCount, setGenCount]               = useState(0);
   const [showModal, setShowModal]             = useState(false);
-  const [shipping, setShipping]               = useState({
+  const [shipping, setShipping]               = useState<Record<string, string>>({
     recipientName: '', country: '', street: '', streetNumber: '',
     apartment: '', postalCode: '', invoiceName: '',
   });
@@ -429,69 +451,20 @@ export default function HomePage() {
             <p style={{ fontSize: 10, letterSpacing: '0.25em', color: C.gold, textTransform: 'uppercase',
               marginBottom: 16, fontFamily: 'Helvetica, Arial, sans-serif' }}>Shipping Address</p>
 
-            {[
-              { key: 'recipientName', label: 'Recipient Name', placeholder: 'Full name', required: true, full: true },
-              { key: 'country',       label: 'Country',         placeholder: 'e.g. Israel', required: true },
-              { key: 'street',        label: 'Street',          placeholder: 'Street name', required: true },
-              { key: 'streetNumber',  label: 'Number',          placeholder: '12', required: true },
-              { key: 'apartment',     label: 'Apt / Floor',     placeholder: 'Optional' },
-              { key: 'postalCode',    label: 'Postal Code',     placeholder: 'ZIP / Post code', required: true },
-            ].reduce<ReactElement[]>((rows, field, i, arr) => {
-              if (field.full) {
-                rows.push(
-                  <div key={field.key} style={{ marginBottom: 14 }}>
-                    <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
-                      fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
-                      {field.label}{field.required && <span style={{ color: C.gold }}> *</span>}
-                    </label>
-                    <input value={shipping[field.key as keyof typeof shipping]}
-                      onChange={e => setShipping(s => ({ ...s, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
-                      style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
-                        fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
-                        color: C.text, outline: 'none', boxSizing: 'border-box' }} />
-                  </div>
-                );
-              } else if (i % 2 === 0 && !arr[i-1]?.full) {
-                const next = arr[i+1];
-                if (next && !next.full) {
-                  rows.push(
-                    <div key={field.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                      {[field, next].map(f => (
-                        <div key={f.key}>
-                          <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
-                            fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
-                            {f.label}{f.required && <span style={{ color: C.gold }}> *</span>}
-                          </label>
-                          <input value={shipping[f.key as keyof typeof shipping]}
-                            onChange={e => setShipping(s => ({ ...s, [f.key]: e.target.value }))}
-                            placeholder={f.placeholder}
-                            style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
-                              fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
-                              color: C.text, outline: 'none', boxSizing: 'border-box' }} />
-                        </div>
-                      ))}
-                    </div>
-                  );
-                } else {
-                  rows.push(
-                    <div key={field.key} style={{ marginBottom: 14 }}>
-                      <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
-                        fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
-                        {field.label}{field.required && <span style={{ color: C.gold }}> *</span>}
-                      </label>
-                      <input value={shipping[field.key as keyof typeof shipping]}
-                        onChange={e => setShipping(s => ({ ...s, [field.key]: e.target.value }))}
-                        placeholder={field.placeholder}
-                        style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
-                          fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
-                          color: C.text, outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                  );
-                }
-              }
-              return rows;
-            }, [])}
+            {/* Row: Recipient Name */}
+            <ShipField label="Recipient Name" k="recipientName" required placeholder="Full name" shipping={shipping} setShipping={setShipping} C={C} />
+            {/* Row: Country */}
+            <ShipField label="Country" k="country" required placeholder="e.g. Israel" shipping={shipping} setShipping={setShipping} C={C} />
+            {/* Row: Street + Number */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: 14 }}>
+              <ShipField label="Street" k="street" required placeholder="Street name" shipping={shipping} setShipping={setShipping} C={C} inline />
+              <ShipField label="Number" k="streetNumber" required placeholder="12" shipping={shipping} setShipping={setShipping} C={C} inline />
+            </div>
+            {/* Row: Apt + Postal */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              <ShipField label="Apt / Floor" k="apartment" placeholder="Optional" shipping={shipping} setShipping={setShipping} C={C} inline />
+              <ShipField label="Postal Code" k="postalCode" required placeholder="ZIP / Post code" shipping={shipping} setShipping={setShipping} C={C} inline />
+            </div>
 
             {/* Invoice name */}
             <div style={{ marginBottom: 28 }}>
