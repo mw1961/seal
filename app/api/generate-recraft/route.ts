@@ -39,6 +39,8 @@ function segmentPassesThroughCenter(x1: number, y1: number, x2: number, y2: numb
 }
 
 function validateSvg(svg: string, i: number): string {
+  // Text elements — absolutely forbidden
+  if (/<text[\s>]/i.test(svg) || /<tspan/i.test(svg) || /font-/i.test(svg)) { console.warn(`SVG ${i} text element`); return fallbackSvg(i); }
   if (/<polygon/i.test(svg) || /<polyline/i.test(svg)) { console.warn(`SVG ${i} polygon`); return fallbackSvg(i); }
   if (/M[\d\s.,]+L[\d\s.,]+L[\d\s.,]+Z/i.test(svg.replace(/\s+/g, ' '))) { console.warn(`SVG ${i} triangle`); return fallbackSvg(i); }
 
@@ -109,16 +111,23 @@ export async function POST(request: NextRequest) {
     const valuesStr     = Array.isArray(values)     ? values.join(', ')     : values;
 
     const varietyHint = VARIETY_HINTS[variant % VARIETY_HINTS.length];
-    const avoidLine   = usedShapes ? `\nAlready shown — avoid repeating: ${usedShapes}` : '';
+
+    const messages: { role: 'user' | 'assistant'; content: string }[] = [];
+
+    if (usedShapes) {
+      // Multi-turn: show Claude what was already generated, then ask for different designs
+      messages.push({ role: 'user', content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}\n\n${varietyHint}` });
+      messages.push({ role: 'assistant', content: `I already generated these designs (shapes used: ${usedShapes}). Now I will create 4 completely different compositions using different shape families.` });
+      messages.push({ role: 'user', content: `Correct. Now generate 4 new SVGs using DIFFERENT shapes from what was already shown. ${varietyHint}` });
+    } else {
+      messages.push({ role: 'user', content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}\n\n${varietyHint}` });
+    }
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 7000,
       system: SVG_SYSTEM,
-      messages: [{
-        role: 'user',
-        content: `Origin: ${originStr}\nOccupation: ${occupationStr}\nValues: ${valuesStr}${avoidLine}\n\nVariety hint: ${varietyHint}`,
-      }],
+      messages,
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text : '';

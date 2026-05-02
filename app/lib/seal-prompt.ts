@@ -175,7 +175,7 @@ const SECTION_H = `STRICTLY FORBIDDEN content:
 - NO iris, pupil, or any shape that resembles an eye
 - NO religious symbols: crosses, crescents, Stars of David, OM, ankh
 - NO national symbols or flags
-- NO text, letters, numbers
+- NO text, letters, numbers — NEVER use <text>, <tspan>, or any font attribute. Country names, family names, words of any kind are absolutely forbidden inside the SVG.
 - NO animals, faces, human figures, hands
 - NO offensive, conspiratorial, or militaristic imagery
 - NO masonic symbols (pyramids, triangles, compasses, all-seeing eye)
