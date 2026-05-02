@@ -39,7 +39,8 @@ const SECTION_D = `STAMP PRODUCTION CONSTRAINTS — every shape must survive phy
 - Circle border: <circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>
 - Square border: <rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>
 - Minimum stroke-width="9" everywhere — thinner lines collapse in rubber/metal engraving
-- Only fill="black" or fill="none" + stroke="black" — no grays, no gradients
+- Only fill="black", fill="none", or fill="white" + stroke="black" — no grays, no gradients
+  (fill="white" is allowed ONLY to create over/under weave illusions — a white-filled shape hides the "under" strand at a crossing point)
 - Max 5 shapes per SVG (including border) for Japanese/Modern/Abstract — Ancient style may use up to 6
 - Safe zone: stay within radius 108 for circle, 15px inset for square
 - All shapes must be CLOSED or clearly bounded — open paths that don't form a region will not engrave cleanly
@@ -210,4 +211,18 @@ Try compositions like:
   • A meander-inspired composition: a square border with an inner square offset and one connecting L-shaped path
   • A rosette: one bold ring with 6 small arcs arranged around it like petals, each arc curving outward
 Avoid: any shape that overlaps another, lines through center.`,
+
+  // Batch 4 — Celtic / interlocking weave (advanced)
+  `COMPOSITION DIRECTION THIS BATCH: Build a CELTIC INTERLOCKING WEAVE — strands that pass over and under each other, creating depth.
+The SVG over/under technique:
+  1. Draw all strands as bold <path> elements with stroke="black" fill="none" stroke-width="14"
+  2. At each CROSSING POINT, add a narrow <path> or <rect> with fill="white" stroke="none" to "cut" the under-strand
+  3. The white shape must be slightly wider than the stroke to cleanly hide it
+Try compositions like:
+  • A 4-fold interlocking knot: four C-curve strands (path C commands) that loop and cross, with 4-way rotational symmetry
+  • Two interlocking S-curves that form a continuous loop, with over/under at 2 crossing points
+  • A band knot: a thick ring with a single looping strand that crosses itself 4 times evenly around the circle
+Key: the composition must have rotational symmetry and feel balanced.
+All within safe zone, double outer ring (r=132 border + r=118 inner ring) frames the knot.
+Avoid: more than 8 crossing points (gets illegible), irregular/asymmetric compositions.`,
 ];
