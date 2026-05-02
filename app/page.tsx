@@ -48,6 +48,7 @@ const STYLES = [
   { label: 'Modern',   full: 'Modern (clean, geometric)' },
   { label: 'Ancient',  full: 'Ancient (classical, ornate)' },
   { label: 'Abstract', full: 'Abstract (symbolic, open)' },
+  { label: 'Maze',     full: 'Maze (angular fragments, bracket pattern)' },
 ];
 
 // Exclude shape and style — style is now chosen in the results screen

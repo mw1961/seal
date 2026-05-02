@@ -119,7 +119,16 @@ Abstract (symbolic, open):
   - 3–4 shapes per SVG
   - Asymmetric but balanced — shapes offset from center are encouraged
   - Prefer open arcs, partial rings, and non-centered compositions
-  - Intentionally ambiguous geometry that suggests rather than states`;
+  - Intentionally ambiguous geometry that suggests rather than states
+
+Maze (angular fragments, bracket pattern):
+  - Square border only (no circles)
+  - ONE <path> element containing 10-12 disconnected subpaths (M...L...L M...L...L)
+  - Each subpath is an L-bracket, C-bracket, or short dash — all at strict 90° angles
+  - Distributed across the full interior (not centered) — loose 4×4 grid spacing
+  - No bracket touches or crosses another — minimum 14px gap everywhere
+  - stroke-width="11", fill="none" — bold and clear for engraving
+  - Total shapes: border rect + 1 path = 2 shapes only`;
 
 // ── Section G: Allowed elements (FOUNDATIONAL — never add polygon/ellipse) ────
 
@@ -211,6 +220,32 @@ Try compositions like:
   • A meander-inspired composition: a square border with an inner square offset and one connecting L-shaped path
   • A rosette: one bold ring with 6 small arcs arranged around it like petals, each arc curving outward
 Avoid: any shape that overlaps another, lines through center.`,
+
+  // Batch 5 — Maze bracket pattern
+  `COMPOSITION DIRECTION THIS BATCH: Build a MAZE BRACKET PATTERN — angular fragments scattered across the space like scattered puzzle pieces or ancient script fragments.
+
+SVG TECHNIQUE: Use a SINGLE <path> element with 10-12 disconnected subpaths. Each subpath is one bracket. Multiple M commands in one path = still counts as 1 shape.
+
+Bracket vocabulary (each spans 28-38px, all at 90° angles only):
+  L-bracket open right:  M x y  L x y+30  L x+30 y+30
+  L-bracket open left:   M x+30 y  L x+30 y+30  L x y+30
+  L-bracket open up:     M x y+30  L x y  L x+30 y
+  L-bracket open down:   M x y  L x+30 y  L x+30 y+30
+  C-bracket (3 lines):   M x+30 y  L x y  L x y+30  L x+30 y+30
+  Short dash:            M x y  L x+28 y
+
+Distribution rules:
+  - Place brackets in a loose 4×4 grid across x:40–255, y:40–255
+  - Shift each bracket randomly ±10px from its grid cell center
+  - Mix all 4 L-bracket orientations + some C-brackets + 1-2 dashes
+  - Minimum 14px gap between any two brackets
+  - NO bracket may touch or cross another
+
+Full path structure example:
+  <path d="M 50 50 L 50 80 L 80 80  M 110 45 L 140 45 L 140 75  M 175 60 L 175 88  M 210 50 L 210 80 L 240 80  M 48 100 L 48 130 L 78 130  ..." fill="none" stroke="black" stroke-width="11"/>
+
+Square border required. The bracket path is the only inner element (border + 1 path = 2 shapes total).
+The overall feel: maze fragments, ancient inscription, architectural notation — visual texture with rhythm.`,
 
   // Batch 4 — Celtic / interlocking weave (advanced)
   `COMPOSITION DIRECTION THIS BATCH: Build a CELTIC INTERLOCKING WEAVE — strands that pass over and under each other, creating depth.
