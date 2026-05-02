@@ -122,8 +122,9 @@ MAZE RULES (SVGs 5–6 only):
 - ONE <path> element with 19-22 disconnected subpaths. Each subpath = one bracket. stroke-width="10" fill="none" stroke-linejoin="round"
 
 PLACEMENT SYSTEM — divide the interior into a strict 5×5 grid of 44px cells:
-  Cell origins: x ∈ {36, 80, 124, 168, 212}  ×  y ∈ {36, 80, 124, 168, 212}
+  Cell origins: x ∈ {55, 96, 137, 178, 219}  ×  y ∈ {55, 96, 137, 178, 219}
   25 cells total. Fill 19-22 cells, skip 3-6 cells randomly — dense kaleidoscope texture.
+  This leaves ~30px white margin between the brackets and the inner border edge on all sides — essential for stamp production (the white band prevents ink bleed into the frame).
   Each bracket is drawn relative to its cell origin (cx, cy). Bracket size: 22px span.
     L-open-right:  M cx cy      L cx cy+22    L cx+22 cy+22
     L-open-left:   M cx+22 cy   L cx+22 cy+22 L cx cy+22
@@ -136,6 +137,7 @@ PLACEMENT SYSTEM — divide the interior into a strict 5×5 grid of 44px cells:
 CRITICAL RULES — no bracket may touch or overlap another:
   • Every bracket must stay fully inside its 44px cell (max 22px span)
   • The 44px cell size minus 22px bracket = 22px buffer — NEVER exceed bracket into buffer
+  • The outermost brackets (row/col 1 and 5) must never be closer than 25px to the border rect stroke
   • Do NOT shift brackets off their cell origin
   • stroke-width="10" means each stroke occupies 5px on each side — safe within 22px buffer
 
