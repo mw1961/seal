@@ -119,28 +119,30 @@ The family's profile (origin, occupation, values) must guide the specific geomet
 
 MAZE RULES (SVGs 5–6 only):
 - Square border: <rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>
-- ONE <path> element with 10-12 disconnected subpaths. Each subpath = one bracket. stroke-width="11" fill="none" stroke-linejoin="round"
+- ONE <path> element with 19-22 disconnected subpaths. Each subpath = one bracket. stroke-width="10" fill="none" stroke-linejoin="round"
 
-PLACEMENT SYSTEM — divide the interior into a strict 4×4 grid of 56px cells:
-  Cell origins: x ∈ {38, 94, 150, 206}  ×  y ∈ {38, 94, 150, 206}
-  Place ONE bracket per cell. Skip only 2-3 cells (leave them empty) — fill 13-14 of the 16 cells for a dense, rich pattern. The composition should feel full, like a wax seal texture, not sparse.
-  Each bracket is drawn relative to its cell origin (cx, cy):
-    L-open-right:  M cx cy      L cx cy+30    L cx+30 cy+30
-    L-open-left:   M cx+30 cy   L cx+30 cy+30 L cx cy+30
-    L-open-up:     M cx cy+30   L cx cy       L cx+30 cy
-    L-open-down:   M cx cy      L cx+30 cy    L cx+30 cy+30
-    C-bracket:     M cx+30 cy   L cx cy       L cx cy+30   L cx+30 cy+30
-    Short dash:    M cx cy+15   L cx+28 cy+15
+PLACEMENT SYSTEM — divide the interior into a strict 5×5 grid of 44px cells:
+  Cell origins: x ∈ {36, 80, 124, 168, 212}  ×  y ∈ {36, 80, 124, 168, 212}
+  25 cells total. Fill 19-22 cells, skip 3-6 cells randomly — dense kaleidoscope texture.
+  Each bracket is drawn relative to its cell origin (cx, cy). Bracket size: 22px span.
+    L-open-right:  M cx cy      L cx cy+22    L cx+22 cy+22
+    L-open-left:   M cx+22 cy   L cx+22 cy+22 L cx cy+22
+    L-open-up:     M cx cy+22   L cx cy       L cx+22 cy
+    L-open-down:   M cx cy      L cx+22 cy    L cx+22 cy+22
+    C-bracket:     M cx+22 cy   L cx cy       L cx cy+22   L cx+22 cy+22
+    Short dash:    M cx cy+11   L cx+20 cy+11
+    Tiny L (accent, 12px): M cx cy  L cx cy+12  L cx+12 cy+12
 
 CRITICAL RULES — no bracket may touch or overlap another:
-  • Every bracket must stay fully inside its 56px cell (max 30px span)
-  • The 56px cell size minus 30px bracket = 26px buffer on every side — NEVER exceed the bracket into the buffer
-  • Do NOT shift brackets off their cell origin — use exact cell origins only
-  • No two subpaths in the path may share any x,y coordinate range
-  • stroke-width="11" means each stroke occupies 5.5px on each side — keep this in mind for the 26px buffer
+  • Every bracket must stay fully inside its 44px cell (max 22px span)
+  • The 44px cell size minus 22px bracket = 22px buffer — NEVER exceed bracket into buffer
+  • Do NOT shift brackets off their cell origin
+  • stroke-width="10" means each stroke occupies 5px on each side — safe within 22px buffer
 
-Mix of bracket types: use all 4 L-orientations + 3-4 C-brackets + 2 dashes across the 13-14 placed brackets.
-SVG 6 must use a DIFFERENT selection of cells than SVG 5 (different empty/filled pattern).`;
+Mix of bracket types for kaleidoscope effect:
+  Use all 4 L-orientations + 4-5 C-brackets + 3 dashes + 2-3 tiny accent Ls
+  Vary orientations so neighbouring cells point in different directions — creates visual rotation
+SVG 6 must use a DIFFERENT cell selection and orientation mix than SVG 5.`;
 
 // ── Section G: Allowed elements (FOUNDATIONAL — never add polygon/ellipse) ────
 
