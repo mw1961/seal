@@ -53,13 +53,47 @@ Values examples:
   Harmony → yin-yang inspired bisected circle (bold arcs only)
   Community → three interlocked circles
 
-FORBIDDEN in every SVG:
-- NO 5-pointed stars (too close to national/religious symbols)
+STRICTLY FORBIDDEN — if you include any of these, the output is invalid:
+- NO star shapes of any kind — no polygon with alternating long/short radii
+- NO 5-pointed, 6-pointed, or any-pointed star polygons
+- NO <polygon> with 10 points (that is a 5-pointed star) — use <polygon> with 6, 8, or 12 EQUAL sides only
 - NO text, letters, numbers
-- NO animals, faces, human figures
-- NO religious symbols (no crosses, crescents, Stars of David)
+- NO animals, faces, human figures, hands
+- NO religious symbols: no crosses, crescents, Stars of David, triangles pointing up combined with circles
 - NO national flags or emblems
-- NO thin strokes under 9px`;
+- NO thin strokes under 9px
+- Each of the 4 SVGs MUST have a visually different inner motif — no two can look similar
+
+ALLOWED polygon types (equal sides only):
+- Hexagon: 6 equal sides
+- Octagon: 8 equal sides
+- Decagon: 10 equal sides (all same length — NOT a star)
+- Use <circle>, <rect>, <line>, <path> with arcs for variety`;
+
+// ── Fallback SVG (clean geometric, no stars) ─────────────────────────────────
+
+function fallbackSvg(i: number): string {
+  const defs = [
+    {
+      border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
+      inner:  `<polygon points="150,55 237,97 237,203 150,245 63,203 63,97" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="30" fill="black"/>`,
+    },
+    {
+      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
+      inner:  `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><line x1="150" y1="60" x2="150" y2="240" stroke="black" stroke-width="9"/><line x1="60" y1="150" x2="240" y2="150" stroke="black" stroke-width="9"/><line x1="86" y1="86" x2="214" y2="214" stroke="black" stroke-width="9"/><line x1="214" y1="86" x2="86" y2="214" stroke="black" stroke-width="9"/>`,
+    },
+    {
+      border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
+      inner:  `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="50" fill="none" stroke="black" stroke-width="9"/><polygon points="150,65 224,107 224,193 150,235 76,193 76,107" fill="none" stroke="black" stroke-width="9"/>`,
+    },
+    {
+      border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
+      inner:  `<rect x="65" y="65" width="170" height="170" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/><circle cx="150" cy="150" r="45" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="14" fill="black"/>`,
+    },
+  ];
+  const d = defs[i % defs.length];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${d.border}${d.inner}</svg>`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,34 +118,23 @@ export async function POST(request: NextRequest) {
     const parsed = JSON.parse(jsonMatch[0]) as { svgs?: string[] };
     if (!parsed.svgs?.length) throw new Error('No SVGs');
 
-    const seals = parsed.svgs.map((svg, i) => ({ variant: i, svg, imageUrl: null, error: null }));
+    // Validate: reject any SVG containing a star polygon (10-point polygon)
+    const validated = parsed.svgs.map((svg, i) => {
+      const isStarPolygon = /points="[^"]*"/.test(svg) &&
+        (svg.match(/\d+\.\d+,\d+\.\d+/g) || []).length === 10;
+      if (isStarPolygon) {
+        console.warn(`SVG ${i} contains star polygon — using fallback`);
+        return fallbackSvg(i);
+      }
+      return svg;
+    });
+
+    const seals = validated.map((svg, i) => ({ variant: i, svg, imageUrl: null, error: null }));
     return NextResponse.json({ seals });
 
   } catch (err) {
     console.error('generate-seal:', err);
-    // Fallback: 2 circles + 2 squares with distinct inner motifs
-    const fallbackDefs = [
-      {
-        border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
-        inner: `<polygon points="150,48 190,116 270,116 210,164 232,242 150,196 68,242 90,164 30,116 110,116" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="20" fill="black"/>`,
-      },
-      {
-        border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-        inner: `<circle cx="150" cy="150" r="90" fill="none" stroke="black" stroke-width="9"/><line x1="150" y1="60" x2="150" y2="240" stroke="black" stroke-width="9"/><line x1="60" y1="150" x2="240" y2="150" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="18" fill="black"/>`,
-      },
-      {
-        border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`,
-        inner: `<polygon points="150,52 178,126 258,126 196,170 218,244 150,200 82,244 104,170 42,126 122,126" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="28" fill="none" stroke="black" stroke-width="9"/>`,
-      },
-      {
-        border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`,
-        inner: `<rect x="68" y="68" width="164" height="164" fill="none" stroke="black" stroke-width="9" transform="rotate(45 150 150)"/><circle cx="150" cy="150" r="40" fill="none" stroke="black" stroke-width="9"/><circle cx="150" cy="150" r="12" fill="black"/>`,
-      },
-    ];
-    const seals = fallbackDefs.map(({ border, inner }, i) => ({
-      variant: i, imageUrl: null, error: null,
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${border}${inner}</svg>`,
-    }));
+    const seals = [0, 1, 2, 3].map(i => ({ variant: i, imageUrl: null, error: null, svg: fallbackSvg(i) }));
     return NextResponse.json({ seals });
   }
 }
