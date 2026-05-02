@@ -124,6 +124,17 @@ export async function POST(request: NextRequest) {
         console.warn(`SVG ${i} bullseye pattern — fallback`);
         return fallbackSvg(i);
       }
+      // Overlapping rotated rects: if 3+ rects share the same center with different rotations → crossing
+      const rects = [...svg.matchAll(/<rect[^>]+transform="rotate\((\d+)[^"]*\)"[^>]*>/gi)].map(m => {
+        const angle = parseFloat(m[1]);
+        const w = parseFloat(m[0].match(/width="([\d.]+)"/)?.[1] ?? '0');
+        const h = parseFloat(m[0].match(/height="([\d.]+)"/)?.[1] ?? '0');
+        return { angle, w, h };
+      });
+      if (rects.length >= 3) {
+        console.warn(`SVG ${i} 3+ rotated rects (overlapping) — fallback`);
+        return fallbackSvg(i);
+      }
       // X shape: detect multi-segment paths where two segments cross center
       const pathSegs = [...svg.matchAll(/d="([^"]+)"/gi)];
       for (const [, d] of pathSegs) {

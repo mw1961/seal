@@ -43,7 +43,8 @@ const SECTION_D = `STAMP PRODUCTION CONSTRAINTS — every shape must survive phy
 - Max 5 shapes per SVG (including border) — more detail is lost at stamp scale (2–4 cm)
 - Safe zone: stay within radius 108 for circle, 15px inset for square
 - All shapes must be CLOSED or clearly bounded — open paths that don't form a region will not engrave cleanly
-- Minimum gap between any two strokes: 6px — closer lines merge into a blob when pressed into rubber`;
+- Minimum gap between any two strokes: 6px — closer lines merge into a blob when pressed into rubber
+- NO overlapping shapes: shapes must never cross or intersect each other. Every shape must occupy its own region of space. Two rotated rects that cross each other create tiny triangular gaps that collapse in rubber engraving — FORBIDDEN. Instead, nest shapes inside one another (one fits fully inside the other) or place them side by side with clear separation.`;
 
 // ── Section E: Visual metaphor library (extend freely, never remove) ──────────
 
