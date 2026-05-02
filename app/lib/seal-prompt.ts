@@ -46,7 +46,10 @@ const SECTION_D = `STAMP PRODUCTION CONSTRAINTS — every shape must survive phy
 - Only fill="black", fill="none", or fill="white" + stroke="black" — no grays, no gradients
   (fill="white" is allowed ONLY to create over/under weave illusions — a white-filled shape hides the "under" strand at a crossing point)
 - Max 5 shapes per SVG (including border) — Maze SVGs use border + 1 path only (= 2 shapes)
-- Safe zone: stay within radius 108 for circle, 15px inset for square
+- Safe zone — STRICT: all inner shapes must stay inside these boundaries:
+    Circle border: every point of every shape must be within radius 108 from center (150,150). For a rotated rect, its CORNERS must be within r=108 — calculate: if rect width=w height=h rotated N°, the corner distance from center = √((w/2)²+(h/2)²) must be ≤ 108.
+    Square border: every point must stay within x: 33–267, y: 33–267 (15px inset from the 300×300 canvas).
+    When using transform="rotate(N 150 150)" on a rect: the corner farthest from center = √((w/2)²+(h/2)²). This must be ≤ 108 for circle, ≤ 117 for square. SIZE YOUR RECTS ACCORDINGLY before rotating.
 - All shapes must be CLOSED or clearly bounded — open paths that don't form a region will not engrave cleanly
 - Minimum gap between any two strokes: 6px — closer lines merge into a blob when pressed into rubber
 - NO overlapping shapes: shapes must never cross or intersect each other. Every shape must occupy its own region of space. Two rotated rects that cross each other create tiny triangular gaps that collapse in rubber engraving — FORBIDDEN. Instead, nest shapes inside one another (one fits fully inside the other) or place them side by side with clear separation.

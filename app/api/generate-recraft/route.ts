@@ -118,6 +118,29 @@ export async function POST(request: NextRequest) {
           return fallbackSvg(i);
         }
       }
+      // Rotated rect out-of-bounds: corner distance must be ≤ 117 (square safe zone)
+      for (const [rectTag] of svg.matchAll(/<rect[^>]+>/gi)) {
+        const w    = parseFloat(rectTag.match(/width="([\d.]+)"/)?.[1]  ?? '0');
+        const h    = parseFloat(rectTag.match(/height="([\d.]+)"/)?.[1] ?? '0');
+        const x    = parseFloat(rectTag.match(/\bx="([\d.]+)"/)?.[1]   ?? '150');
+        const y    = parseFloat(rectTag.match(/\by="([\d.]+)"/)?.[1]   ?? '150');
+        const hasRotate = /transform="rotate/.test(rectTag);
+        if (hasRotate && w > 0 && h > 0) {
+          // Corner distance from center for a centered rotated rect
+          const cx = x + w / 2, cy = y + h / 2;
+          const cornerDist = Math.sqrt((cx - 150) ** 2 + (cy - 150) ** 2) + Math.sqrt((w / 2) ** 2 + (h / 2) ** 2);
+          if (cornerDist > 120) {
+            console.warn(`SVG ${i} rotated rect out of bounds (cornerDist=${cornerDist.toFixed(0)}) — fallback`);
+            return fallbackSvg(i);
+          }
+        } else if (!hasRotate && w > 0 && h > 0) {
+          // Non-rotated rect: check edges directly
+          if (x < 30 || y < 30 || x + w > 270 || y + h > 270) {
+            console.warn(`SVG ${i} rect out of bounds — fallback`);
+            return fallbackSvg(i);
+          }
+        }
+      }
       // Thin-only composition: 2 concentric rings + only a short path accent = not producible
       const circleCount = [...svg.matchAll(/<circle[^>]+>/gi)].length;
       const pathCount   = [...svg.matchAll(/<path[^>]+>/gi)].length;
