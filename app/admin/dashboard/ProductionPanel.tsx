@@ -96,77 +96,125 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
   }
 
   function copyManufacturerBrief() {
-    const filename = `sygneo-${sel.id}-${stampSize}mm.svg`;
-    const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+    const filename  = `sygneo-${sel.id}-${stampSize}mm.svg`;
+    const date      = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+    const svgSrc    = sel.productionSvg ?? sel.sealSvg;
+    const isCircle  = /cx="150"\s+cy="150"\s+r="132"/.test(svgSrc);
+    const shapeName = isCircle ? 'Circle' : 'Square';
+
+    // Size-specific notes
+    const sizeNotes: Record<number, string> = {
+      30: `IMPORTANT — 30mm is a small format. Fine lines in the design require high laser precision.
+  • Minimum achievable line width on rubber must be ≤ 0.4mm at this size — please confirm.
+  • Use a higher DPI laser pass if available.
+  • Recommended rubber: photopolymer or fine-cell synthetic rubber (not standard red rubber).
+  • Handle: small grip handle (approx. 35mm diameter) proportional to face size.`,
+
+      38: `38mm is a medium format. Standard laser engraving parameters apply.
+  • Minimum achievable line width must be ≤ 0.5mm — please confirm.
+  • Recommended rubber: photopolymer or synthetic rubber.
+  • Handle: standard medium grip handle proportional to face size.`,
+
+      40: `40mm is the standard production size. Optimal balance of detail and durability.
+  • Minimum achievable line width must be ≤ 0.5mm — please confirm.
+  • Recommended rubber: photopolymer or high-quality synthetic rubber.
+  • Handle: standard grip handle (approx. 45–50mm diameter).`,
+
+      50: `50mm is a large format. Ensure even pressure distribution across the full face.
+  • A foam cushion layer is critical at this size to maintain even contact.
+  • Minimum achievable line width must be ≤ 0.6mm — please confirm.
+  • Recommended rubber: firm synthetic rubber (not soft foam-backed).
+  • Handle: wide stable handle (approx. 55mm diameter minimum).`,
+    };
+
+    // Shape-specific notes
+    const shapeNotes = isCircle
+      ? `SHAPE: Circle
+  • The stamp face must be die-cut to a round shape — exactly ${stampSize}mm diameter.
+  • The circular border is part of the design (engraved ring). Do not add an additional cut border.
+  • Cut the rubber to circle shape AFTER engraving, not before.`
+      : `SHAPE: Square
+  • The stamp face is square — exactly ${stampSize}mm × ${stampSize}mm, with straight edges.
+  • The square border is part of the design (engraved frame). Do not add an additional cut border.
+  • Cut rubber to square shape with clean 90° corners.`;
+
     const brief = `REQUEST FOR QUOTATION — Custom Rubber Stamp
 Sygneo Heritage Stamps | hello@sygneo.com
 Date: ${date}
 Order Reference: ${sel.id}
 
-────────────────────────────────────────
+════════════════════════════════════════
 DESIGN FILE
-────────────────────────────────────────
-File: ${filename}
-Format: SVG vector · viewBox 300×300 · Physical size: ${stampSize}mm × ${stampSize}mm
-Please use this file as the sole source for engraving. Do not scale or alter proportions.
+════════════════════════════════════════
+File:     ${filename}
+Format:   SVG vector · viewBox 300×300
+Output:   ${stampSize}mm × ${stampSize}mm · Shape: ${shapeName}
 
-────────────────────────────────────────
+Use this file as the SOLE source for engraving.
+Do not scale, crop, or alter proportions in any way.
+
+════════════════════════════════════════
+SIZE & SHAPE NOTES
+════════════════════════════════════════
+${sizeNotes[stampSize] ?? sizeNotes[40]}
+
+${shapeNotes}
+
+════════════════════════════════════════
 PRODUCT SPECIFICATIONS
-────────────────────────────────────────
-Product type:   Traditional rubber stamp with handle (no built-in ink — for use with external ink pad)
-Stamp face:     ${stampSize}mm × ${stampSize}mm (exact)
-Handle:         High-quality polished wood (preferred) or clear acrylic — please advise
-Rubber type:    Laser-engraved natural or synthetic rubber
-Ink colour:     ${sel.profile.inkColor} (for customer reference only — stamp ships without ink)
+════════════════════════════════════════
+Product type:   Traditional rubber stamp with handle
+                (no built-in ink reservoir — used with external ink pad)
+Stamp face:     ${stampSize}mm × ${stampSize}mm — EXACT. No tolerance.
+Handle:         High-quality polished wood (preferred) or clear acrylic
+                Please specify which material and handle style you offer
+Rubber:         Laser-engraved — see size notes above for recommended type
+Ink colour:     ${sel.profile.inkColor} (reference only — stamp ships without ink)
 
-────────────────────────────────────────
+════════════════════════════════════════
 ENGRAVING SPECIFICATIONS
-────────────────────────────────────────
+════════════════════════════════════════
 Method:         Laser engraving
-Depth:          Minimum 1.2mm — Maximum 1.5mm
-                (background must not contact paper when stamping)
-Edge quality:   Sharp and crisp — design is a precision geometric matrix
-All raised elements (lines/shapes) must be clean with no burring
+Depth:          Minimum 1.2mm · Maximum 1.5mm
+                Background MUST NOT contact paper when stamping
+Edges:          Sharp and crisp — no burring, no melted edges
+Relief:         All lines and shapes must be raised and clean
+Design type:    Precision geometric pattern — fine lines at regular intervals
+                Please confirm your minimum line resolution before production
 
-────────────────────────────────────────
+════════════════════════════════════════
 ASSEMBLY
-────────────────────────────────────────
-- Rubber mounted flush and centred on handle
-- Thin foam cushioning layer between rubber and mount (for even ink distribution)
-- No visible misalignment
+════════════════════════════════════════
+• Rubber mounted flush and perfectly centred on handle
+• Thin foam cushioning layer between rubber and wooden mount
+  (required for even ink distribution — do not omit)
+• No visible misalignment or tilt
 
-────────────────────────────────────────
-CUSTOMER PROFILE (for design context)
-────────────────────────────────────────
-Origin:     ${sel.profile.origin}
-Occupation: ${sel.profile.occupation}
-Values:     ${sel.profile.values?.join(', ')}
-${sel.notes ? `Designer notes: ${sel.notes}` : ''}
-
-────────────────────────────────────────
+════════════════════════════════════════
 SHIPPING
-────────────────────────────────────────
-Ship to:
+════════════════════════════════════════
+Ship directly to:
   ${sel.shipping?.recipientName ?? ''}
   ${sel.shipping?.street ?? ''} ${sel.shipping?.streetNumber ?? ''}${sel.shipping?.apartment ? `, Apt ${sel.shipping.apartment}` : ''}
-  ${sel.shipping?.postalCode ?? ''}, ${sel.shipping?.country ?? ''}
-  ${sel.shipping?.phone ? `Tel: ${sel.shipping.phone}` : ''}
+  ${sel.shipping?.postalCode ?? ''}, ${sel.shipping?.country ?? ''}${sel.shipping?.phone ? `\n  Tel: ${sel.shipping.phone}` : ''}
 
-Note: stamp ships WITHOUT ink pad (postal regulations).
-Plain protective packaging only — no branded packaging required for this sample.
+• Stamp ships WITHOUT ink pad (international postal regulations)
+• Plain protective packaging — stamp face must be protected from contamination
+• No branded packaging required for this sample order
 
-────────────────────────────────────────
+════════════════════════════════════════
 QUOTE REQUEST
-────────────────────────────────────────
+════════════════════════════════════════
 Please provide:
-1. Unit price for 1 sample unit
-2. Unit price for volumes: 10 / 50 / 100 units
-3. Production lead time
-4. Shipping cost and options to destination country
-5. Confirmation you can receive SVG files for production
-6. Your recommended rubber type for fine geometric designs
+1. Unit price — 1 sample unit (as specified)
+2. Unit price — volumes: 10 / 50 / 100 units
+3. Production lead time for sample
+4. Shipping cost and method to destination country
+5. Confirmation you accept SVG files for production
+6. Recommended rubber type for fine geometric designs at ${stampSize}mm
+7. Photos of previous similar work (geometric fine-line stamps) if available
 
-────────────────────────────────────────
+════════════════════════════════════════
 Sygneo | hello@sygneo.com | sygneo.com`;
 
     navigator.clipboard.writeText(brief).then(() => {
