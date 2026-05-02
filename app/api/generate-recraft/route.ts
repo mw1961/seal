@@ -122,9 +122,19 @@ function fallbackSvg(i: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="white"/>${d.border}${d.inner}</svg>`;
 }
 
+// Each batch gets a different primary shape vocabulary to force variety
+const BATCH_VOCABULARY = [
+  `SHAPE VOCABULARY THIS BATCH: Use CURVED ARCS and SPIRALS as primary shapes. Build from <path> arc commands (A) and <circle> rings. Avoid hexagons, spoked wheels, and rotated rectangles.`,
+  `SHAPE VOCABULARY THIS BATCH: Use ROTATED RECTANGLES and NESTED SQUARES as primary shapes. Build from <rect transform="rotate(N 150 150)"> and nested squares at different angles. Avoid circles as the main motif.`,
+  `SHAPE VOCABULARY THIS BATCH: Use CONCENTRIC RINGS at VARIED SPACING as primary shapes. Rings of very different radii (e.g. r=40, r=80, r=108). Avoid hexagons, diamonds, and spoked wheels.`,
+  `SHAPE VOCABULARY THIS BATCH: Use RADIAL LINES and SEGMENTED ARCS as primary shapes. Build from <line> elements at angles (never through center) and partial <path> arcs. Avoid solid circles and rectangles as borders of inner motifs.`,
+];
+
 export async function POST(request: NextRequest) {
   try {
-    const { origin, occupation, values, style } = await request.json();
+    const { origin, occupation, values, style, variant = 0 } = await request.json();
+
+    const batchInstruction = BATCH_VOCABULARY[variant % BATCH_VOCABULARY.length];
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
@@ -132,7 +142,7 @@ export async function POST(request: NextRequest) {
       system: SVG_SYSTEM,
       messages: [{
         role: 'user',
-        content: `Origin: ${Array.isArray(origin) ? origin.join(', ') : origin}\nOccupation: ${Array.isArray(occupation) ? occupation.join(', ') : occupation}\nValues: ${Array.isArray(values) ? values.join(', ') : values}\nStyle: ${style}`,
+        content: `Origin: ${Array.isArray(origin) ? origin.join(', ') : origin}\nOccupation: ${Array.isArray(occupation) ? occupation.join(', ') : occupation}\nValues: ${Array.isArray(values) ? values.join(', ') : values}\nStyle: ${style}\n\n${batchInstruction}`,
       }],
     });
 
