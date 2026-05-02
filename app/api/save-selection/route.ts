@@ -5,7 +5,7 @@ import type { SealSelection } from '@/app/lib/db';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { profile, sealSvg, sealIndex, notes } = body;
+    const { profile, sealSvg, sealIndex, notes, shipping } = body;
 
     if (!profile || !sealSvg) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       productionSvg: sealSvg, // initially same as customer selection
       sealIndex,
       notes: notes ?? '',
+      shipping: shipping ?? undefined,
       status: 'vector_ready',  // SVG is already a vector — ready immediately
       history: [
         { status: 'pending',      at: now },

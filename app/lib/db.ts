@@ -20,6 +20,16 @@ export interface ProductionEvent {
   note?: string;
 }
 
+export interface ShippingAddress {
+  recipientName: string;
+  country: string;
+  street: string;
+  streetNumber: string;
+  apartment?: string;
+  postalCode: string;
+  invoiceName?: string;
+}
+
 export interface SealSelection {
   id: string;
   createdAt: string;
@@ -35,6 +45,7 @@ export interface SealSelection {
   productionSvg?: string;
   sealIndex: number;
   notes: string;
+  shipping?: ShippingAddress;
   status: ProductionStatus;
   productionNotes?: string;
   manufacturerRef?: string;

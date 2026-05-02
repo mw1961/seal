@@ -67,6 +67,11 @@ export default function HomePage() {
   const [generating, setGenerating]           = useState(false);
   const [elapsed, setElapsed]                 = useState(0);
   const [genCount, setGenCount]               = useState(0);
+  const [showModal, setShowModal]             = useState(false);
+  const [shipping, setShipping]               = useState({
+    recipientName: '', country: '', street: '', streetNumber: '',
+    apartment: '', postalCode: '', invoiceName: '',
+  });
 
   const genLimitReached = genCount >= MAX_GENERATIONS;
 
@@ -177,12 +182,14 @@ export default function HomePage() {
     await fetchMoreSeals(answers, next, false);
   }
 
+  const shippingValid = shipping.recipientName.trim() && shipping.country.trim() &&
+    shipping.street.trim() && shipping.streetNumber.trim() && shipping.postalCode.trim();
+
   async function handleConfirm() {
-    if (chosen === null) return;
+    if (chosen === null || !shippingValid) return;
     setSaving(true); setError('');
     try {
       const profile = buildProfile({ ...answers, shape: seals[chosen].shape });
-
       const sealSvg = seals[chosen].svg || seals[chosen].imageUrl || '';
       const res = await fetch('/api/save-selection', {
         method: 'POST',
@@ -197,13 +204,23 @@ export default function HomePage() {
             inkColor:   color,
           },
           sealSvg,
-          sealIndex:  chosen,
+          sealIndex: chosen,
           notes,
+          shipping: {
+            recipientName: shipping.recipientName,
+            country:       shipping.country,
+            street:        shipping.street,
+            streetNumber:  shipping.streetNumber,
+            apartment:     shipping.apartment || undefined,
+            postalCode:    shipping.postalCode,
+            invoiceName:   shipping.invoiceName || undefined,
+          },
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Save failed');
       setSavedId(data.id);
+      setShowModal(false);
       setPhase('confirmed');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to save selection');
@@ -268,6 +285,7 @@ export default function HomePage() {
   // ── Results ──────────────────────────────────────────────────────────────────
   if (phase === 'results') {
     return (
+      <>
       <main style={{ minHeight: '100vh', background: C.bg, padding: '40px 24px', fontFamily: 'Georgia, serif', color: C.text }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
 
@@ -330,9 +348,9 @@ export default function HomePage() {
                 placeholder="Any preferences or refinements you'd like..."
                 rows={2}
                 style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `1px solid ${C.border}`, color: C.text, fontSize: 14, padding: '0 0 10px', outline: 'none', fontFamily: 'Georgia, serif', resize: 'none', boxSizing: 'border-box' }} />
-              <button onClick={handleConfirm} disabled={saving}
-                style={{ marginTop: 18, padding: '13px 36px', border: 'none', background: saving ? C.muted : C.gold, color: '#fff', fontSize: 12, letterSpacing: '0.28em', textTransform: 'uppercase', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', fontWeight: 500 }}>
-                {saving ? 'Saving...' : 'Confirm & Lock Selection'}
+              <button onClick={() => setShowModal(true)}
+                style={{ marginTop: 18, padding: '13px 36px', border: 'none', background: C.gold, color: '#fff', fontSize: 12, letterSpacing: '0.28em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', fontWeight: 500 }}>
+                Confirm & Order →
               </button>
             </div>
           )}
@@ -368,6 +386,143 @@ export default function HomePage() {
           )}
         </div>
       </main>
+
+      {/* ── Confirmation Modal ─────────────────────────────────────────────── */}
+      {showModal && chosen !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(28,26,23,0.7)', zIndex: 100,
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          overflowY: 'auto', padding: '40px 16px' }}>
+          <div style={{ background: C.surface, maxWidth: 520, width: '100%',
+            padding: '40px 36px', fontFamily: 'Georgia, serif', color: C.text, position: 'relative' }}>
+
+            <button onClick={() => setShowModal(false)}
+              style={{ position: 'absolute', top: 16, right: 20, background: 'none', border: 'none',
+                fontSize: 20, color: C.muted, cursor: 'pointer', lineHeight: 1 }}>×</button>
+
+            <p style={{ fontSize: 10, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase',
+              marginBottom: 20, fontFamily: 'Helvetica, Arial, sans-serif' }}>Confirm Your Selection</p>
+
+            {/* Seal preview */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28,
+              padding: '16px 20px', border: `1px solid ${C.border}`, background: C.bg }}>
+              <div style={{ width: 90, height: 90, flexShrink: 0 }}
+                dangerouslySetInnerHTML={{ __html: seals[chosen].svg }} />
+              <div>
+                <p style={{ fontSize: 13, margin: '0 0 6px' }}>This is the mark you are ordering.</p>
+                <p style={{ fontSize: 11, color: C.sub, margin: 0, lineHeight: 1.6 }}>
+                  Once submitted, our team will begin production of your personal heritage stamp.
+                </p>
+              </div>
+            </div>
+
+            {/* Ink notice */}
+            <div style={{ background: '#FFF8F0', border: `1px solid #DDD8D0`,
+              padding: '12px 16px', marginBottom: 28, borderLeft: `3px solid ${C.gold}` }}>
+              <p style={{ fontSize: 11, color: C.sub, margin: 0, lineHeight: 1.7, fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                <strong style={{ color: C.text }}>Note:</strong> Your stamp will arrive <strong>without ink</strong> due to postal and import/export regulations. Stamp ink pads are widely available at stationery and office supply stores.
+              </p>
+            </div>
+
+            {/* Shipping address */}
+            <p style={{ fontSize: 10, letterSpacing: '0.25em', color: C.gold, textTransform: 'uppercase',
+              marginBottom: 16, fontFamily: 'Helvetica, Arial, sans-serif' }}>Shipping Address</p>
+
+            {[
+              { key: 'recipientName', label: 'Recipient Name', placeholder: 'Full name', required: true, full: true },
+              { key: 'country',       label: 'Country',         placeholder: 'e.g. Israel', required: true },
+              { key: 'street',        label: 'Street',          placeholder: 'Street name', required: true },
+              { key: 'streetNumber',  label: 'Number',          placeholder: '12', required: true },
+              { key: 'apartment',     label: 'Apt / Floor',     placeholder: 'Optional' },
+              { key: 'postalCode',    label: 'Postal Code',     placeholder: 'ZIP / Post code', required: true },
+            ].reduce<JSX.Element[]>((rows, field, i, arr) => {
+              if (field.full) {
+                rows.push(
+                  <div key={field.key} style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
+                      fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
+                      {field.label}{field.required && <span style={{ color: C.gold }}> *</span>}
+                    </label>
+                    <input value={shipping[field.key as keyof typeof shipping]}
+                      onChange={e => setShipping(s => ({ ...s, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
+                        fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
+                        color: C.text, outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                );
+              } else if (i % 2 === 0 && !arr[i-1]?.full) {
+                const next = arr[i+1];
+                if (next && !next.full) {
+                  rows.push(
+                    <div key={field.key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                      {[field, next].map(f => (
+                        <div key={f.key}>
+                          <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
+                            fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
+                            {f.label}{f.required && <span style={{ color: C.gold }}> *</span>}
+                          </label>
+                          <input value={shipping[f.key as keyof typeof shipping]}
+                            onChange={e => setShipping(s => ({ ...s, [f.key]: e.target.value }))}
+                            placeholder={f.placeholder}
+                            style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
+                              fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
+                              color: C.text, outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                      ))}
+                    </div>
+                  );
+                } else {
+                  rows.push(
+                    <div key={field.key} style={{ marginBottom: 14 }}>
+                      <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
+                        fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
+                        {field.label}{field.required && <span style={{ color: C.gold }}> *</span>}
+                      </label>
+                      <input value={shipping[field.key as keyof typeof shipping]}
+                        onChange={e => setShipping(s => ({ ...s, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
+                          fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
+                          color: C.text, outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                  );
+                }
+              }
+              return rows;
+            }, [])}
+
+            {/* Invoice name */}
+            <div style={{ marginBottom: 28 }}>
+              <label style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
+                fontFamily: 'Helvetica, Arial, sans-serif', display: 'block', marginBottom: 5 }}>
+                Invoice Name <span style={{ color: C.muted, fontStyle: 'italic' }}>(if different from recipient)</span>
+              </label>
+              <input value={shipping.invoiceName}
+                onChange={e => setShipping(s => ({ ...s, invoiceName: e.target.value }))}
+                placeholder="Company or individual name for invoice"
+                style={{ width: '100%', border: `1px solid ${C.border}`, padding: '9px 12px',
+                  fontSize: 14, fontFamily: 'Georgia, serif', background: C.bg,
+                  color: C.text, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+
+            {error && <p style={{ color: '#A0522D', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+
+            <button onClick={handleConfirm} disabled={saving || !shippingValid}
+              style={{ width: '100%', padding: '14px', border: 'none',
+                background: (saving || !shippingValid) ? C.muted : C.gold,
+                color: '#fff', fontSize: 12, letterSpacing: '0.3em', textTransform: 'uppercase',
+                cursor: (saving || !shippingValid) ? 'not-allowed' : 'pointer',
+                fontFamily: 'Helvetica, Arial, sans-serif', fontWeight: 500 }}>
+              {saving ? 'Placing Order...' : 'Place Order'}
+            </button>
+            <p style={{ fontSize: 10, color: C.muted, textAlign: 'center', marginTop: 12,
+              fontFamily: 'Helvetica, Arial, sans-serif' }}>
+              Fields marked <span style={{ color: C.gold }}>*</span> are required
+            </p>
+          </div>
+        </div>
+      )}
+      </>
     );
   }
 

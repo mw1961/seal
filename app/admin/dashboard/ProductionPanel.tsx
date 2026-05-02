@@ -23,10 +23,16 @@ const STATUSES: { value: ProductionStatus; label: string; color: string }[] = [
 
 interface HistoryEvent { status: string; at: string; note?: string }
 
+interface ShippingAddress {
+  recipientName: string; country: string; street: string;
+  streetNumber: string; apartment?: string; postalCode: string; invoiceName?: string;
+}
+
 interface Selection {
   id: string; createdAt: string; status: ProductionStatus;
   profile: { origin: string; occupation: string; values: string[]; inkColor: string };
   sealSvg: string; productionSvg?: string; notes: string;
+  shipping?: ShippingAddress;
   productionNotes?: string; manufacturerRef?: string; trackingNumber?: string;
   history?: HistoryEvent[];
 }
@@ -133,6 +139,26 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
           {sel.productionNotes && (
             <p style={{ fontSize: 11, color: C.sub, margin: '6px 0 0',
               borderLeft: `2px solid ${C.gold}`, paddingLeft: 8 }}>{sel.productionNotes}</p>
+          )}
+
+          {/* Shipping address */}
+          {sel.shipping && (
+            <div style={{ marginTop: 10, padding: '10px 12px', background: '#F8F5F0',
+              border: `1px solid ${C.border}`, fontSize: 12 }}>
+              <p style={{ fontSize: 9, color: C.muted, letterSpacing: '0.15em', textTransform: 'uppercase',
+                fontFamily: 'Helvetica, Arial, sans-serif', margin: '0 0 6px' }}>Ship to</p>
+              <p style={{ margin: 0, lineHeight: 1.7, color: C.text }}>
+                <strong>{sel.shipping.recipientName}</strong><br/>
+                {sel.shipping.street} {sel.shipping.streetNumber}
+                {sel.shipping.apartment ? `, ${sel.shipping.apartment}` : ''}<br/>
+                {sel.shipping.postalCode} {sel.shipping.country}
+              </p>
+              {sel.shipping.invoiceName && (
+                <p style={{ margin: '6px 0 0', fontSize: 11, color: C.sub }}>
+                  Invoice: {sel.shipping.invoiceName}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
