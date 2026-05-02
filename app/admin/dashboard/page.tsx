@@ -53,9 +53,6 @@ export default async function AdminDashboard() {
               margin: '6px 0 0', fontFamily: 'Helvetica, Arial, sans-serif' }}>Production Dashboard</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <a href="/admin/svg-lab" style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase',
-              color: '#8B7355', textDecoration: 'none', border: '1px solid #8B7355',
-              padding: '8px 16px', fontFamily: 'Helvetica, Arial, sans-serif' }}>SVG Lab</a>
             <form action="/api/admin/logout" method="POST">
               <button type="submit" style={{ fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase',
                 color: '#B0A898', background: 'none', border: 'none', cursor: 'pointer',
