@@ -27,14 +27,19 @@ The result must be UNIQUE to THIS specific family — not a generic geometric pa
 // ── Section C: Layout (FOUNDATIONAL — do not change order) ───────────────────
 
 const SECTION_C = `MANDATORY LAYOUT — output exactly 6 SVGs:
-- SVG 1: CIRCLE border — lead with ORIGIN geometry, accent with occupation or values. Be creative — no style constraint.
-- SVG 2: SQUARE border — lead with OCCUPATION geometry, accent with origin or values. Be creative.
-- SVG 3: CIRCLE border — lead with VALUES geometry, accent with origin or occupation. Be creative.
-- SVG 4: SQUARE border — full synthesis of all three parameters. Be creative.
-- SVG 5: MAZE BRACKET — square border, 10-12 angular bracket fragments scattered across interior (see Maze rules below)
-- SVG 6: MAZE BRACKET — square border, different bracket density/rotation mix from SVG 5
+- SVG 1: CIRCLE border — lead with ORIGIN geometry
+- SVG 2: SQUARE border — lead with OCCUPATION geometry
+- SVG 3: CIRCLE border — lead with VALUES geometry
+- SVG 4: SQUARE border — full synthesis of all three parameters
+- SVG 5: MAZE BRACKET — square border (see Maze rules below)
+- SVG 6: MAZE BRACKET — square border, different from SVG 5
 
-SVGs 1–4 have NO style restriction — use your full creative range. Each must feel different from the others.`;
+⚠ SHAPE DIVERSITY RULE — THIS OVERRIDES THE METAPHOR LIBRARY:
+SVGs 1–4 must each use a DIFFERENT primary shape family. You may not use the same primary shape in two SVGs.
+The four shape families are: (A) ARCS & CURVES  (B) ROTATED RECTANGLES  (C) RADIAL LINES  (D) CONCENTRIC RINGS
+Assign one family per SVG — no repeats. The BATCH ASSIGNMENTS in the user message specify which family goes to which SVG.
+The metaphor library gives you the MEANING to encode — but the BATCH ASSIGNMENT overrides which SHAPE to use.
+Example: "Craftsman → diamond" is the meaning. But if SVG 1 is assigned ARCS, you encode the craftsman meaning using arcs, not a diamond.`;
 
 // ── Section D: Stamp production constraints (FOUNDATIONAL — never relax) ──────
 
