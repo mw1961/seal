@@ -1,17 +1,17 @@
 import { redirect } from 'next/navigation';
 import { isAdminAuthenticated } from '@/app/lib/admin-auth';
+import { redis } from '@/app/lib/db';
 import { ProductionCard } from './ProductionPanel';
 import type { SealSelection, ProductionStatus } from '@/app/lib/db';
 
 async function getSelections(): Promise<SealSelection[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://sygneoforever.com'}/api/save-selection`,
-      { cache: 'no-store' }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.selections ?? [];
+    const ids = await redis.lrange('sygneo:selections', 0, 99);
+    if (!ids || ids.length === 0) return [];
+    const raw = await Promise.all(ids.map(id => redis.get(`sygneo:selection:${id}`)));
+    return raw
+      .filter(Boolean)
+      .map(s => (typeof s === 'string' ? JSON.parse(s) : s) as SealSelection);
   } catch {
     return [];
   }
