@@ -6,111 +6,102 @@ export const maxDuration = 60;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ── System prompt: Claude as SVG engineer ─────────────────────────────────────
+// ── Claude: generate 4 prompts ────────────────────────────────────────────────
 
-const SVG_SYSTEM = `You are an expert SVG engineer specialized in geometric family seals for metal and rubber stamp production.
+const CLAUDE_SYSTEM = `You are a specialized prompt engineer for industrial engraving design. Transform family heritage data into 4 distinct image generation prompts.
 
-Your task: Generate 4 unique SVG seal designs based on a family profile.
+GOAL: 30x30mm geometric seal, production-ready for metal/laser engraving.
 
-SVG TECHNICAL REQUIREMENTS:
-- viewBox="0 0 300 300", width="300", height="300"
-- All elements: stroke="black", stroke-width between 5 and 10
-- Fills: ONLY fill="black" (solid) or fill="white" or fill="none"
-- NO grey, NO colors, NO gradients, NO opacity
-- Stroke caps: stroke-linecap="round" stroke-linejoin="round"
-- All designs centered at (150, 150)
-- ALWAYS include an outer circular border: <circle cx="150" cy="150" r="135" fill="none" stroke="black" stroke-width="8"/>
+STRICT RULES FOR EVERY PROMPT:
+- Strictly solid black on pure white background. No grey, no shading, no gradients.
+- Perfect centered symmetry within a circular boundary.
+- Very thick bold lines only. No fine details or hairlines.
+- Strictly geometric and abstract.
+- FORBIDDEN: text, letters, human figures, animals, religious symbols, national flags.
 
-DESIGN RULES:
-- Strictly geometric and abstract — circles, polygons, lines, arcs, spirals only
-- NO text, NO letters, NO animals, NO faces, NO human figures
-- NO religious symbols, NO national flags, NO political symbols
-- Bold thick strokes — minimum 5px (production requirement for 30mm stamp)
-- Symmetric composition — radial or grid symmetry
-- Translate origin/occupation/values into pure geometry:
-  * Morocco → 12-point star polygon
-  * Japan → minimal single centered circle motif
-  * Carpenter → interlocking angular joints
-  * Scholar → nested squares with proportional grid
-  * Resilience → bold triangle nested in concentric rings
-  * Loyalty → two interlocked rings
+TRANSLATE input data to abstract geometry — NEVER literal objects:
+- Origin → cultural geometric pattern (Morocco → 12-point star grid; Japan → circular mon)
+- Profession → symbolic geometry (Carpenter → interlocking angular joints; Scholar → mathematical grid)
+- Values → abstract form (Resilience → nested triangle in rings; Loyalty → two interlocked rings)
 
-FOUR VARIANTS:
-1. Origin-focused: geometric pattern inspired by the family's cultural roots
-2. Occupation-focused: bold symbolic geometry representing the family's work
-3. Values-focused: abstract geometric forms representing core values
-4. Combined: concentric layered composition integrating all three elements
+Output EXACTLY 4 lines:
+REPLICATE_PROMPT_1: [origin-focused prompt]
+REPLICATE_PROMPT_2: [profession/values-focused prompt]
+REPLICATE_PROMPT_3: [style-first minimalist prompt]
+REPLICATE_PROMPT_4: [hybrid synthesis prompt]`;
 
-RESPONSE FORMAT — return ONLY valid JSON, no markdown, no explanation:
-{
-  "svgs": [
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300' width='300' height='300'>DESIGN_1</svg>",
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300' width='300' height='300'>DESIGN_2</svg>",
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300' width='300' height='300'>DESIGN_3</svg>",
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300' width='300' height='300'>DESIGN_4</svg>"
-  ]
-}`;
-
-// ── Generate 4 SVGs via Claude ────────────────────────────────────────────────
-
-async function generateSVGsWithClaude(profile: {
+async function getPromptsFromClaude(profile: {
   origin: string[]; occupation: string[]; values: string[]; style: string;
 }): Promise<string[]> {
-  const userMessage =
-    `Generate 4 geometric seal SVG designs for a family with:\n` +
-    `Origin: ${profile.origin.join(', ')}\n` +
-    `Occupation: ${profile.occupation.join(', ')}\n` +
-    `Values: ${profile.values.join(', ')}\n` +
-    `Style preference: ${profile.style}\n\n` +
-    `Remember: return ONLY the JSON object with the "svgs" array.`;
-
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 8192,
-    system: SVG_SYSTEM,
-    messages: [{ role: 'user', content: userMessage }],
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1024,
+    system: CLAUDE_SYSTEM,
+    messages: [{
+      role: 'user',
+      content: `Origin: ${profile.origin.join(', ')}\nOccupation: ${profile.occupation.join(', ')}\nValues: ${profile.values.join(', ')}\nStyle: ${profile.style}`,
+    }],
   });
 
   const text = response.content[0].type === 'text' ? response.content[0].text : '';
 
-  // Extract JSON — handle potential markdown code blocks
-  const jsonMatch = text.match(/\{[\s\S]*"svgs"[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Claude returned no JSON');
-
-  const parsed = JSON.parse(jsonMatch[0]) as { svgs?: string[] };
-  if (!parsed.svgs || parsed.svgs.length === 0) throw new Error('No SVGs in response');
-
-  return parsed.svgs;
+  const prompts: string[] = [];
+  for (let i = 1; i <= 4; i++) {
+    const m = text.match(new RegExp(`REPLICATE_PROMPT_${i}:\\s*([^\\n]+)`));
+    if (m) prompts.push(m[1].trim());
+  }
+  if (prompts.length === 0) {
+    const lines = text.split('\n').map(l => l.replace(/^[\d\.\-\*]+\s*/, '').trim()).filter(l => l.length > 40);
+    prompts.push(...lines.slice(0, 4));
+  }
+  if (prompts.length === 0) throw new Error('No prompts');
+  return prompts;
 }
 
-// ── Fallback: algorithmic SVG ─────────────────────────────────────────────────
+// ── Leonardo: generate PNG ────────────────────────────────────────────────────
 
-function algorithmicFallback(profile: {
-  origin: string[]; occupation: string[]; values: string[]; style: string;
-}): string[] {
-  const prompts = buildSealPrompts(profile);
-  return prompts.map((_, i) => {
-    const angles = [3, 4, 5, 6][i];
-    const points = Array.from({ length: angles * 2 }, (__, j) => {
-      const r = j % 2 === 0 ? 120 : 60;
-      const a = (j / (angles * 2)) * Math.PI * 2 - Math.PI / 2;
-      return `${(150 + r * Math.cos(a)).toFixed(1)},${(150 + r * Math.sin(a)).toFixed(1)}`;
-    }).join(' ');
-    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300' width='300' height='300'>
-  <circle cx="150" cy="150" r="135" fill="none" stroke="black" stroke-width="8"/>
-  <circle cx="150" cy="150" r="100" fill="none" stroke="black" stroke-width="5"/>
-  <polygon points="${points}" fill="none" stroke="black" stroke-width="6" stroke-linejoin="round"/>
-  <circle cx="150" cy="150" r="20" fill="black"/>
-</svg>`;
+async function callLeonardoAPI(prompt: string): Promise<string> {
+  const apiKey = process.env.LEONARDO_API_KEY;
+  if (!apiKey) throw new Error('LEONARDO_API_KEY not configured');
+
+  const createRes = await fetch('https://cloud.leonardo.ai/api/rest/v1/generations', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt,
+      negative_prompt: 'photo, realistic, texture, noise, blur, gradients, shading, grey, colors, animals, faces, text, letters, messy, chaotic',
+      width: 1024,
+      height: 1024,
+      num_images: 1,
+      contrast: 3.5,
+    }),
   });
+
+  if (!createRes.ok) throw new Error(`Leonardo ${createRes.status}: ${await createRes.text()}`);
+
+  const data = await createRes.json() as { sdGenerationJob?: { generationId?: string } };
+  const generationId = data?.sdGenerationJob?.generationId;
+  if (!generationId) throw new Error('No generationId');
+
+  const deadline = Date.now() + 50_000;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 3000));
+    const poll = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    const d = await poll.json() as { generations_by_pk?: { status?: string; generated_images?: { url: string }[] } };
+    const gen = d?.generations_by_pk;
+    if (gen?.status === 'COMPLETE' && gen.generated_images?.[0]?.url) return gen.generated_images[0].url;
+    if (gen?.status === 'FAILED') throw new Error('Leonardo failed');
+  }
+  throw new Error('Timeout');
 }
 
-// ── POST handler ──────────────────────────────────────────────────────────────
+// ── POST ──────────────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
   try {
     const { origin, occupation, values, style } = await request.json();
-
     const profile = {
       origin:     Array.isArray(origin)     ? origin     : [origin ?? ''],
       occupation: Array.isArray(occupation) ? occupation : [occupation ?? ''],
@@ -118,23 +109,27 @@ export async function POST(request: NextRequest) {
       style:      style ?? 'modern (clean, geometric)',
     };
 
-    let svgs: string[];
+    let prompts: string[];
     try {
-      svgs = await generateSVGsWithClaude(profile);
-    } catch (err) {
-      console.warn('Claude SVG generation failed, using fallback:', err);
-      svgs = algorithmicFallback(profile);
+      prompts = await getPromptsFromClaude(profile);
+    } catch {
+      prompts = buildSealPrompts(profile);
     }
 
-    const seals = svgs.map((svg, i) => ({
-      variant: i,
-      svg,
-      error: null,
+    const results = await Promise.allSettled(prompts.map(p => callLeonardoAPI(p)));
+
+    const seals = results.map((r, i) => ({
+      variant:  i,
+      imageUrl: r.status === 'fulfilled' ? r.value : null,
+      error:    r.status === 'rejected'  ? String(r.reason) : null,
     }));
+
+    if (seals.every(s => !s.imageUrl)) {
+      return NextResponse.json({ error: seals.map(s => s.error).join(' | ') }, { status: 500 });
+    }
 
     return NextResponse.json({ seals });
   } catch (err) {
-    console.error('generate-seal:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
