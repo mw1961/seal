@@ -33,7 +33,7 @@ interface HistoryEvent { status: string; at: string; note?: string }
 
 interface Selection {
   id: string; createdAt: string; status: ProductionStatus;
-  profile: { origin: string; occupation: string; values: string[]; inkColor: string };
+  profile: { origin: string; occupation: string; values: string[]; inkColor: string; initial?: string; language?: string };
   sealSvg: string; productionSvg?: string; notes: string;
   shipping?: ShippingAddress;
   productionNotes?: string; manufacturerRef?: string; trackingNumber?: string;
@@ -149,6 +149,9 @@ DESIGN FILE
 File:     ${filename}
 Format:   SVG vector · viewBox 300×300
 Output:   ${stampSize}mm × ${stampSize}mm · Shape: ${shapeName}
+Initial:  "${sel.profile.initial ?? '?'}" · Script: ${sel.profile.language ?? 'Latin'}
+          The initial letter is embedded in the SVG as a <text> element.
+          Convert to paths before engraving (Inkscape: Path > Object to Path).
 
 Use this file as the SOLE source for engraving.
 Do not scale, crop, or alter proportions in any way.
@@ -275,6 +278,7 @@ Sygneo | hello@sygneo.com | sygneo.com`;
             fontFamily: 'Helvetica, Arial, sans-serif', margin: '0 0 12px' }}>Family Profile</p>
 
           {[
+            ['Initial',    sel.profile.initial ? `${sel.profile.initial}  (${sel.profile.language ?? ''})` : '—'],
             ['Origin',     sel.profile.origin],
             ['Occupation', sel.profile.occupation],
             ['Values',     sel.profile.values?.join(', ')],

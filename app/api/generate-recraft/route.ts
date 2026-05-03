@@ -42,10 +42,13 @@ function injectInitial(svg: string, initial: string, language: string): string {
   const dy   = dyOffset(language);
   const size = 90; // Hero scale: fills the central void of the stamp
 
+  // Unique mask ID per seal — prevents conflicts when multiple SVGs appear on the same page
+  const mid = `lm${Math.random().toString(36).slice(2, 7)}`;
+
   // SVG mask: white = show background, black letterform (+halo) = cut background out.
   // stroke-width="18" = 9px safety buffer on every side of the letter outline.
   const defs =
-    `<defs><mask id="lm">` +
+    `<defs><mask id="${mid}">` +
     `<rect width="300" height="300" fill="white"/>` +
     `<text x="150" y="150" dy="${dy}" font-family="${font}" font-size="${size}" text-anchor="middle"` +
     ` fill="black" stroke="black" stroke-width="18" stroke-linejoin="round">${escaped}</text>` +
@@ -60,7 +63,7 @@ function injectInitial(svg: string, initial: string, language: string): string {
   const inner = s.replace(svgTag, '').replace(bgRect, '').replace('</svg>', '').trim();
 
   // Reconstruct: svgTag + defs + bgRect + masked-group + letter + /svg
-  return `${svgTag}${defs}${bgRect}<g mask="url(#lm)">${inner}</g>${letter}</svg>`;
+  return `${svgTag}${defs}${bgRect}<g mask="url(#${mid})">${inner}</g>${letter}</svg>`;
 }
 
 // Returns true if all inner shapes are within the safe zone

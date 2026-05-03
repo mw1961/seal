@@ -41,6 +41,8 @@ export interface SealSelection {
     shape: string;
     style: string;
     inkColor: string;
+    initial?: string;
+    language?: string;
   };
   sealSvg: string;
   productionSvg?: string;

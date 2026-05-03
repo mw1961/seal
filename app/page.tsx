@@ -243,6 +243,8 @@ export default function HomePage() {
             shape:      seals[chosen].shape,
             style:      seals[chosen].pattern,
             inkColor:   color,
+            initial:    (answers.initial as string) || '',
+            language:   (answers.language as string) || '',
           },
           sealSvg,
           sealIndex: chosen,
