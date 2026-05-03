@@ -401,6 +401,9 @@ export default function HomePage() {
             <p style={{ fontSize: 15, letterSpacing: '0.3em', color: C.gold, textTransform: 'uppercase', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>
               Choose your heritage mark
             </p>
+            <p style={{ fontSize: 14, color: C.sub, margin: '10px 0 0', fontFamily: 'Georgia, serif', fontStyle: 'italic', direction: 'rtl' }}>
+              העיצוב הותאם אישית כדי להבטיח החתמה חדה וברורה לאורך דורות
+            </p>
           </div>
 
           {/* Ink color + Shape filter */}
