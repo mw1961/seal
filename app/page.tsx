@@ -353,7 +353,7 @@ export default function HomePage() {
           Crafting your heritage marks...
         </p>
         <p style={{ fontSize: 13, color: C.muted, marginTop: 12, fontFamily: 'Helvetica, Arial, sans-serif' }}>
-          Crafting 24 unique designs — this takes about 45 seconds
+          Crafting your designs — this may take up to 45 seconds
         </p>
         <div style={{ marginTop: 32, display: 'flex', gap: 8 }}>
           {[0,1,2].map(i => (
