@@ -10,10 +10,38 @@ export interface ProfilerQuestion {
   step: number;
   question: string;
   hint: string;
-  type: 'text' | 'select' | 'multiselect' | 'dropdown';
+  type: 'text' | 'select' | 'multiselect' | 'dropdown' | 'alphabet';
   options?: string[];
   min?: number;
   max?: number;
+}
+
+export type AlphabetKey = 'Latin' | 'Hebrew' | 'Arabic' | 'Cyrillic' | 'Greek' | 'Armenian' | 'Japanese' | 'Chinese' | 'Korean' | 'Georgian';
+
+export const ALPHABETS: Record<AlphabetKey, string[]> = {
+  Latin:    'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z'.split(' '),
+  Hebrew:   'א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת'.split(' '),
+  Arabic:   ['ا','ب','ت','ث','ج','ح','خ','د','ذ','ر','ز','س','ش','ص','ض','ط','ظ','ع','غ','ف','ق','ك','ل','م','ن','ه','و','ي'],
+  Cyrillic: 'А Б В Г Д Е Ж З И К Л М Н О П Р С Т У Ф Х Ц Ч Ш Э Ю Я'.split(' '),
+  Greek:    'Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ Φ Χ Ψ Ω'.split(' '),
+  Armenian: 'Ա Բ Գ Դ Ե Զ Է Ը Թ Ժ Ի Լ Խ Ծ Կ Հ Ձ Ղ Ճ Մ Յ Ն Շ Ո Չ Պ Ջ Ռ Ս Վ Տ Ր Ց Փ Ք'.split(' '),
+  Japanese: 'あ い う え お か き く け こ さ し す せ そ た ち つ て と な に ぬ ね の は ひ ふ へ ほ ま み む め も や ゆ よ ら り る れ ろ わ を ん'.split(' '),
+  Chinese:  ['王','李','张','陈','刘','杨','黄','赵','吴','周','徐','孙','马','朱','胡','郭','何','高','林','郑','谢','韩','唐','冯','于','曹','程','袁','邓','许','傅','沈','曾','彭','吕','苏','卢','蒋','蔡','魏','丁'],
+  Korean:   ['김','이','박','최','정','강','조','윤','장','임','오','한','신','서','권','황','안','송','홍','전','류','고','문','양','손','배','백','허','유','남'],
+  Georgian: 'ა ბ გ დ ე ვ ზ თ ი კ ლ მ ნ ო პ ჟ რ ს ტ უ ფ ქ ღ ყ შ ჩ ც ძ წ ჭ ხ ჯ ჰ'.split(' '),
+};
+
+export function getAlphabetKey(language: string): AlphabetKey {
+  if (language.includes('Hebrew'))   return 'Hebrew';
+  if (language.includes('Arabic'))   return 'Arabic';
+  if (language.includes('Cyrillic')) return 'Cyrillic';
+  if (language.includes('Greek'))    return 'Greek';
+  if (language.includes('Armenian')) return 'Armenian';
+  if (language.includes('Japanese')) return 'Japanese';
+  if (language.includes('Chinese'))  return 'Chinese';
+  if (language.includes('Korean'))   return 'Korean';
+  if (language.includes('Georgian')) return 'Georgian';
+  return 'Latin';
 }
 
 export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
@@ -129,9 +157,9 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
   {
     id: 'initial',
     step: 6,
-    question: 'What is the first letter of your family name?',
-    hint: 'Type a single character in the script you selected. This becomes your personal mark.',
-    type: 'text',
+    question: 'Choose the letter that will represent your family.',
+    hint: 'This initial becomes the heart of your heritage seal.',
+    type: 'alphabet',
   },
   {
     id: 'shape',

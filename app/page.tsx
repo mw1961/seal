@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect, type ReactElement } from 'react';
-import { PROFILER_QUESTIONS, buildProfile } from './lib/profiler-agent';
+import { PROFILER_QUESTIONS, buildProfile, ALPHABETS, getAlphabetKey } from './lib/profiler-agent';
 import type { ProfilerQuestion } from './lib/profiler-agent';
+import { fontSpec } from './lib/seal-prompt';
 
 const C = {
   bg:        '#F8F5F0',
@@ -191,10 +192,10 @@ export default function HomePage() {
 
   async function handleNext() {
     if (!question) return;
-    const value = question.type === 'multiselect'                    ? selectedOptions
+    const value = question.type === 'multiselect'                         ? selectedOptions
                 : question.type === 'dropdown' && (question.max ?? 1) > 1 ? selectedOptions
-                : question.type === 'dropdown'                            ? (customInput.trim() || selectedOptions[0] || '')
-                : question.type === 'select'                              ? selectedOptions[0] ?? ''
+                : question.type === 'dropdown'                             ? (customInput.trim() || selectedOptions[0] || '')
+                : question.type === 'select' || question.type === 'alphabet' ? selectedOptions[0] ?? ''
                 : currentText;
 
     const updated = { ...answers, [question.id]: value };
@@ -303,7 +304,7 @@ export default function HomePage() {
 
           {/* Initial preview */}
           <div style={{ border: `1px solid ${C.border}`, background: C.surface, padding: '36px 24px', marginBottom: 24 }}>
-            <div style={{ fontSize: 96, lineHeight: 1, marginBottom: 12, color: C.text, fontFamily: 'Georgia, serif' }}>
+            <div style={{ fontSize: 96, lineHeight: 1, marginBottom: 12, color: C.text, fontFamily: fontSpec(language) }}>
               {familyInitial}
             </div>
             <p style={{ fontSize: 13, color: C.muted, letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0, fontFamily: 'Helvetica, Arial, sans-serif' }}>
@@ -694,14 +695,51 @@ export default function HomePage() {
 
         {question?.type === 'text' && (
           <input type="text" value={currentText}
-            onChange={e => setCurrentText(question?.id === 'initial' ? e.target.value.slice(0, 4) : e.target.value)}
+            onChange={e => setCurrentText(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && canProceed && handleNext()}
-            placeholder={question?.id === 'initial' ? 'e.g. A, מ, ا, Α...' : 'Your answer...'}
-            autoFocus
-            style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `1px solid ${C.border}`, color: C.text, fontSize: question?.id === 'initial' ? 48 : 18, paddingBottom: 12, outline: 'none', fontFamily: 'Georgia, serif', boxSizing: 'border-box', textAlign: question?.id === 'initial' ? 'center' : 'left' }}
+            placeholder="Your answer..." autoFocus
+            style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: `1px solid ${C.border}`, color: C.text, fontSize: 18, paddingBottom: 12, outline: 'none', fontFamily: 'Georgia, serif', boxSizing: 'border-box' }}
             onFocus={e => e.target.style.borderBottomColor = C.gold}
             onBlur={e => e.target.style.borderBottomColor = C.border} />
         )}
+
+        {question?.type === 'alphabet' && (() => {
+          const language = (answers.language as string) || '';
+          const alphaKey = getAlphabetKey(language);
+          const letters  = ALPHABETS[alphaKey] ?? ALPHABETS.Latin;
+          const font     = fontSpec(language);
+          const selected = selectedOptions[0] ?? null;
+          const isRtl    = alphaKey === 'Hebrew' || alphaKey === 'Arabic';
+          const isCjk    = alphaKey === 'Chinese' || alphaKey === 'Korean' || alphaKey === 'Japanese';
+          return (
+            <div>
+              {/* Preview of selected letter */}
+              <div style={{ textAlign: 'center', marginBottom: 20, minHeight: 88 }}>
+                {selected ? (
+                  <div style={{ fontFamily: font, fontSize: 88, lineHeight: 1, color: C.text, display: 'inline-block', padding: '10px 28px', border: `1px solid ${C.gold}`, background: C.surface }}>
+                    {selected}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 13, color: C.muted, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.25em', textTransform: 'uppercase', paddingTop: 32 }}>
+                    Select a letter below
+                  </div>
+                )}
+              </div>
+              {/* Letter grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(46px, 1fr))', gap: 6, direction: isRtl ? 'rtl' : 'ltr' }}>
+                {letters.map(letter => {
+                  const isActive = selected === letter;
+                  return (
+                    <button key={letter} onClick={() => setSelectedOptions([letter])}
+                      style={{ fontFamily: font, fontSize: isCjk ? 20 : 22, height: 46, border: `1px solid ${isActive ? C.borderAct : C.border}`, background: isActive ? 'rgba(139,115,85,0.1)' : C.surface, color: isActive ? C.gold : C.text, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, outline: 'none' }}>
+                      {letter}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {question?.type === 'dropdown' && (() => {
           const max = question.max ?? 1;
