@@ -94,6 +94,7 @@ export default function HomePage() {
   const [chosen, setChosen]                   = useState<number | null>(null);
   const [notes, setNotes]                     = useState('');
   const [color, setColor]                     = useState('#000000');
+  const [stampSize, setStampSize]             = useState<number>(40);
   const [error, setError]                     = useState('');
   const [saving, setSaving]                   = useState(false);
   const [savedId, setSavedId]                 = useState('');
@@ -245,6 +246,7 @@ export default function HomePage() {
             inkColor:   color,
             initial:    (answers.initial as string) || '',
             language:   (answers.language as string) || '',
+            stampSize,
           },
           sealSvg,
           sealIndex: chosen,
@@ -278,7 +280,7 @@ export default function HomePage() {
     setPhase('questionnaire'); setAllSeals([]); setChosen(null); setNotes('');
     setError(''); setSavedId(''); setColor('#000000');
     setCustomInput(''); setCustomPending(''); setVariant(0); setGenCount(0);
-    setShapeFilter('all');
+    setShapeFilter('all'); setStampSize(40);
   }
 
   // ── Confirming ──────────────────────────────────────────────────────────────
@@ -479,7 +481,27 @@ export default function HomePage() {
           {/* Notes + Confirm */}
           {chosen !== null && (
             <div style={{ border: `1px solid ${C.border}`, background: C.surface, padding: '24px', marginTop: 24 }}>
-              <p style={{ fontSize: 15, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', margin: '0 0 12px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+
+              {/* Stamp size selector */}
+              <p style={{ fontSize: 13, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', margin: '0 0 10px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+                Stamp Size
+              </p>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {[30, 38, 40, 50].map(mm => (
+                  <button key={mm} onClick={() => setStampSize(mm)}
+                    style={{ padding: '8px 16px', border: `1px solid ${stampSize === mm ? C.gold : C.border}`, background: stampSize === mm ? 'rgba(139,115,85,0.1)' : 'transparent', color: stampSize === mm ? C.gold : C.muted, fontSize: 14, cursor: 'pointer', fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em', transition: 'all 0.15s' }}>
+                    {mm}mm
+                  </button>
+                ))}
+              </div>
+              <p style={{ fontSize: 13, color: C.muted, margin: '-12px 0 20px', fontFamily: 'Helvetica, Arial, sans-serif', fontStyle: 'italic' }}>
+                {stampSize === 30 && 'Compact · ideal for personal correspondence'}
+                {stampSize === 38 && 'Medium · versatile everyday use'}
+                {stampSize === 40 && 'Standard · recommended for most uses'}
+                {stampSize === 50 && 'Large · bold statement piece'}
+              </p>
+
+              <p style={{ fontSize: 13, letterSpacing: '0.25em', color: C.muted, textTransform: 'uppercase', margin: '0 0 12px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
                 Notes for the designer (optional)
               </p>
               <textarea value={notes} onChange={e => setNotes(e.target.value)}

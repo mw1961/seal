@@ -33,7 +33,7 @@ interface HistoryEvent { status: string; at: string; note?: string }
 
 interface Selection {
   id: string; createdAt: string; status: ProductionStatus;
-  profile: { origin: string; occupation: string; values: string[]; inkColor: string; initial?: string; language?: string };
+  profile: { origin: string; occupation: string; values: string[]; inkColor: string; initial?: string; language?: string; stampSize?: number };
   sealSvg: string; productionSvg?: string; notes: string;
   shipping?: ShippingAddress;
   productionNotes?: string; manufacturerRef?: string; trackingNumber?: string;
@@ -71,7 +71,7 @@ export function ProductionCard({ sel: initial }: { sel: Selection }) {
   const [prodNotes, setProdNotes] = useState(initial.productionNotes ?? '');
   const [mfgRef, setMfgRef]       = useState(initial.manufacturerRef  ?? '');
   const [tracking, setTracking]   = useState(initial.trackingNumber   ?? '');
-  const [stampSize, setStampSize]     = useState(40);
+  const [stampSize, setStampSize]     = useState(initial.profile.stampSize ?? 40);
   const [copied, setCopied]           = useState(false);
   const [copiedBrief, setCopiedBrief] = useState(false);
 
@@ -279,6 +279,7 @@ Sygneo | hello@sygneo.com | sygneo.com`;
 
           {[
             ['Initial',    sel.profile.initial ? `${sel.profile.initial}  (${sel.profile.language ?? ''})` : '—'],
+            ['Stamp Size', sel.profile.stampSize ? `${sel.profile.stampSize}mm` : '40mm (default)'],
             ['Origin',     sel.profile.origin],
             ['Occupation', sel.profile.occupation],
             ['Values',     sel.profile.values?.join(', ')],

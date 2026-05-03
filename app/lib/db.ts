@@ -43,6 +43,7 @@ export interface SealSelection {
     inkColor: string;
     initial?: string;
     language?: string;
+    stampSize?: number;
   };
   sealSvg: string;
   productionSvg?: string;
