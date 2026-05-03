@@ -79,8 +79,17 @@ ${templates}
 
 Note: A family initial letter will be centered over each design. Leave the visual center OPEN — do not fill x:110–190 y:110–190 with black shapes.
 
-BANNED: <polygon> <polyline> <ellipse> <text> <tspan> — do NOT output any text elements.
-BANNED CONTENT: religious symbols, stars, crosses, crescents, flags, animals, faces.
+BANNED ELEMENTS: <polygon> <polyline> <ellipse> <text> <tspan> — do NOT output any text elements.
+
+STRICTLY FORBIDDEN CONTENT — never generate any of the following:
+- Religious symbols: cross, crescent, Star of David, OM, menorah, ankh, or any faith symbol
+- Military / weapon symbols: crosshair, gun sight, bullet, sword, shield-with-weapon, grenade, target
+- Nationalist / political symbols: flags, state emblems, party logos, national seals
+- Racist or hate symbols of any kind
+- Gender-specific symbols
+- Animals, faces, human figures, hands
+- Stars (pointy alternating shapes)
+- The Eye of Providence or any "all-seeing eye" shape
 
 CRITICAL: Each of the 12 designs must match its numbered template. Do NOT generate the same layout for two different numbers.`;
 }
