@@ -189,9 +189,12 @@ export async function POST(request: NextRequest) {
       values: valuesArr.join(', '), lineage, language, initial,
     };
 
-    // Include variant so each "Try Again" batch selects a different template set
-    const hash    = profileHash(originStr + '|v' + String(variant), valuesArr.join(', '));
-    const indices = selectIndices(hash, 10, 6);
+    // Shuffle all 12 templates by profile hash, then split into two complementary batches of 6.
+    // Batch 0 (variant=0) → first 6;  Batch 1 (variant=1) → last 6.  Zero overlap guaranteed.
+    const hash       = profileHash(originStr, valuesArr.join(', '));
+    const allIndices = selectIndices(hash, 12, 12);
+    const batchStart = (variant % 2) * 6;
+    const indices    = allIndices.slice(batchStart, batchStart + 6);
 
     const [circleSvgs, squareSvgs] = await Promise.all([
       generateBatch('circle', params, getCircleTemplates(indices)),

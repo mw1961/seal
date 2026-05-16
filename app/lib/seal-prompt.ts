@@ -112,6 +112,23 @@ Ring r=84, stroke-width=11.
 4 L-brackets placed at NE/NW/SE/SW inside the ring (at ~r=62 from center).
 Each bracket: two arms of 14px each, forming an L-shape. stroke-width=10 stroke-linecap="round".
 Adapt to occupation: Builder/Carpenter/Architect → longer arms (18px). Default → 14px.`,
+
+  // C10 — RING + CARDINAL ACCENT MARKS
+  `LAYOUT: Ring + 4 short accent lines at N/E/S/W, placed in the gap between ring and border.
+Ring r=82, stroke-width=11.
+4 accent marks at r=104 from center, each 24px long, perpendicular to the radius:
+  North: x1=138 y1=46 x2=162 y2=46  (horizontal)
+  East:  x1=254 y1=138 x2=254 y2=162 (vertical)
+  South: x1=138 y1=254 x2=162 y2=254 (horizontal)
+  West:  x1=46 y1=138 x2=46 y2=162  (vertical)
+All at r=104, within safe zone ✓. stroke-width=10. FIVE elements (ring + 4 lines).
+Adapt mark length to values: Honor/Courage → 30px. Wisdom → 18px. Default → 24px.`,
+
+  // C11 — TRIPLE CONCENTRIC RINGS
+  `LAYOUT: Three concentric rings. Minimum 22px gap between stroke centers.
+Rings: r=94, r=70, r=48. Gaps: 24px and 22px ✓. stroke-width=10 each. THREE elements only.
+IMPORTANT: Three rings must be clearly distinguishable at output — verify spacing.
+Adapt to values: Resilience/Wisdom → equal spacing (r=94,70,48). Freedom/Creativity → unequal (r=96,68,44).`,
 ];
 
 // ── Square template library (10 options) ──────────────────────────────────
@@ -180,6 +197,28 @@ Square: x=40, w=220, stroke-width=11.
 bottom (x1=150 y1=244 x2=150 y2=224), left (x1=56 y1=150 x2=76 y2=150).
 Each line 20px long, perpendicular to the side. stroke-width=10.
 Adapt to occupation: Scholar → longer marks (24px). Default → 20px.`,
+
+  // S10 — SQUARE + OPEN CROSS ARMS
+  `LAYOUT: Square frame + 4 arm lines forming an open cross (center gap preserved for letter).
+Square: x=40, w=220, stroke-width=11.
+4 cross arms, each starting at r=66 from center, ending near square inner edge:
+  Top:    x1=150 y1=84  x2=150 y2=48
+  Bottom: x1=150 y1=216 x2=150 y2=252
+  Left:   x1=84  y1=150 x2=48  y2=150
+  Right:  x1=216 y1=150 x2=252 y2=150
+Arms 36px each. Clear zone r<66 preserved. stroke-width=10. FIVE elements.
+Adapt arm length to values: Justice/Resilience → arms start at r=60. Default → r=66.`,
+
+  // S11 — SQUARE + DIAGONAL CORNER MARKS
+  `LAYOUT: Square frame + 4 diagonal inward marks at inner corners (45° angle, pointing toward center).
+Square: x=40, w=220, stroke-width=11.
+4 diagonal marks, each 22px at 45°:
+  NW: x1=82 y1=82 x2=98  y2=98
+  NE: x1=218 y1=82 x2=202 y2=98
+  SE: x1=218 y1=218 x2=202 y2=202
+  SW: x1=82 y1=218 x2=98  y2=202
+stroke-width=10 stroke-linecap="round". FIVE elements.
+Adapt diagonal length to occupation: Architect/Builder → 28px. Default → 22px.`,
 ];
 
 // ── Public API ──────────────────────────────────────────────────────────────
