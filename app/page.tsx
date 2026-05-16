@@ -865,7 +865,7 @@ export default function HomePage() {
               })}
             </div>
             {question.type === 'multiselect' && !question.max && (
-              <p style={{ fontSize: 13, color: C.muted, marginTop: 4, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em' }}>Select 2–3 values</p>
+              <p style={{ fontSize: 13, color: C.muted, marginTop: 4, fontFamily: 'Helvetica, Arial, sans-serif', letterSpacing: '0.1em' }}>Select 1–3 values</p>
             )}
             {question.type === 'multiselect' && question.max && (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>

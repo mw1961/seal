@@ -125,9 +125,10 @@ export const PROFILER_QUESTIONS: ProfilerQuestion[] = [
   {
     id: 'values',
     step: 4,
-    question: 'Choose 2–3 values that define your family.',
+    question: 'Choose values that define your family.',
     hint: 'These become the soul of the seal.',
     type: 'multiselect',
+    min: 1,
     options: [
       'Resilience', 'Freedom', 'Harmony', 'Loyalty',
       'Wisdom', 'Courage', 'Creativity', 'Justice',
