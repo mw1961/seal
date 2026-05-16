@@ -1,189 +1,263 @@
-# SYGNEO — Design Rules & System Reference
+# SYGNEO — Master System Reference
+
+> **Two-tier rule system:**
+> - **IMMUTABLE** — production constraints that guarantee every seal can be engraved and stamped. Never relax.
+> - **FLEXIBLE** — creative space where personalization lives. Sizes, counts, emphasis vary per family profile.
+
+---
 
 ## Architecture
 
-- **Framework:** Next.js 16 App Router, TypeScript, Tailwind v4
-- **Generation:** Claude Sonnet API → 6 SVGs per batch as JSON
-- **Storage:** Upstash Redis (prefix `sygneo:`)
-- **Master prompt:** `app/lib/seal-prompt.ts` (Sections A–H + BATCH_VOCABULARY)
-- **API route:** `app/api/generate-recraft/route.ts`
+| Layer | File | Role |
+|-------|------|------|
+| Questionnaire | `app/lib/profiler-agent.ts` | 6 questions → family profile |
+| Template library | `app/lib/seal-prompt.ts` | 12 circle + 12 square templates |
+| Generation API | `app/api/generate-recraft/route.ts` | Selects 6 templates via profile hash → calls Claude |
+| Rendering | `app/page.tsx` | Shows 12 seals per session (2 batches × 6) |
+| Storage | `app/lib/db.ts` | Upstash Redis, prefix `sygneo:` |
+| Admin | `app/admin/dashboard/` | Order management + production panel |
+
+**Template selection:** `profileHash(origin, values)` shuffles all 12 → batch 0 gets indices 0–5, batch 1 gets indices 6–11. Zero overlap between batches. Different profile = different shuffle = different designs.
 
 ---
 
-## Generation Layout — 6 SVGs per batch
+## ━━━ IMMUTABLE PRODUCTION RULES ━━━
 
-| # | Border | Lead motif |
-|---|--------|-----------|
-| 1 | Circle | Origin |
-| 2 | Square | Occupation |
-| 3 | Circle | Values |
-| 4 | Square | Synthesis (all three) |
-| 5 | Square | Maze bracket pattern |
-| 6 | Square | Maze bracket pattern (different arrangement) |
+> These rules exist because rubber/metal engraving is unforgiving.
+> A stroke too thin collapses. Two lines too close merge into a blob.
+> A shape outside the safe zone gets cut off by the die.
+> **Never change these without a physical test on a real stamp.**
 
-**2 batches maximum per session → 12 seals total.**
-Claude has full creative freedom for SVGs 1–4 (no style constraint).
+### SVG Canvas
+
+```
+viewBox="0 0 300 300"
+<rect width="300" height="300" fill="white"/>   ← always first element
+```
+
+### Borders (exact — never modify)
+
+```xml
+Circle: <circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>
+Square: <rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>
+```
+
+### Stroke Width
+
+- **Minimum stroke-width="10"** on every decorative element
+- The border uses stroke-width="12" (always)
+- No exceptions — thinner lines vanish in rubber engraving
+
+### Allowed SVG Elements
+
+```
+<circle>   rings and centered-only fill="black" dots
+<rect>     squares, rectangles (rotate via transform="rotate(N 150 150)")
+<line>     straight line segments
+```
+
+**`<path>`, `<polygon>`, `<polyline>`, `<ellipse>`, `<text>`, `<tspan>` are BANNED.**
+Path curves cannot be reliably engraved at stamp scale.
+
+### Fill Values
+
+Only three values allowed: `fill="none"` · `fill="white"` · `fill="black"`
+No grays, gradients, opacity, or named colors.
+
+### Safe Zone (inner shapes must stay inside)
+
+| Border | Safe zone |
+|--------|-----------|
+| Circle | All inner shapes within **r ≤ 105** from center (150,150) |
+| Square | All inner shapes within **x: 33–267, y: 33–267** |
+
+### Clear Zone (letter space — never intrude)
+
+**No decorative element closer than r = 58 from center (150,150).**
+The family initial lives here. Any element inside r=58 obscures the letter.
+
+### Minimum Gap Between Elements
+
+**22px minimum between any two parallel stroke centers** (not edges).
+Closer than 22px = ink bleeds between lines on paper.
+
+### Element Count
+
+Maximum **6 decorative elements** inside the border per seal (not counting border or background rect).
+
+### Geometry Integrity
+
+- No shape may have corners or edges that extend beyond the safe zone
+- Rotated rects: verify `halfDiagonal = (width/2)·√2 ≤ 105` for circle stamps
+- All line endpoints must be within the safe zone
 
 ---
 
-## Core Design Principle
+## ━━━ FORBIDDEN CONTENT ━━━
 
-Every seal must **synthesize** all family parameters — origin + occupation + values — into one coherent geometric language. Not a generic pattern; unique to this family.
+> Never remove a ban. These exist for legal, ethical, and brand-safety reasons.
 
-Multiple origins (e.g. Morocco + Poland): **layer or interlock** their geometric metaphors — ignore none.
-
----
-
-## Stamp Production Constraints (NEVER RELAX)
-
-- `viewBox="0 0 300 300"`, background `<rect width="300" height="300" fill="white"/>`
-- Circle border: `<circle cx="150" cy="150" r="132" fill="none" stroke="black" stroke-width="12"/>`
-- Square border: `<rect x="18" y="18" width="264" height="264" fill="none" stroke="black" stroke-width="12"/>`
-- **Minimum stroke-width="9"** everywhere — thinner lines collapse in rubber/metal engraving
-- **Maximum 5 shapes per SVG** (including border); Maze uses border + 1 path = 2 shapes
-- Safe zone: radius 108 for circle, 15px inset for square
-- **Minimum 6px gap** between any two strokes — closer lines merge when pressed into rubber
-- **No overlapping shapes** — shapes must be nested or clearly separated, never crossing
-- **No connecting lines between shapes** — lines from one shape's corner to another's always create X patterns
-- All shapes must be closed or clearly bounded
-- Only `fill="black"`, `fill="none"`, or `fill="white"` (white only for weave over/under illusions)
-- Every design must have a **solid anchor** — a shape with clear visual weight, not just thin rings + floating accent
-
----
-
-## Absolutely Forbidden Content (NEVER REMOVE A BAN)
-
-| What | Why |
-|------|-----|
-| Crosshair (lines through center 150,150) | Gun sight |
+| Forbidden | Reason |
+|-----------|--------|
+| Crosshair (lines crossing at center 150,150) | Gun sight |
 | Bullseye (concentric rings + centered filled dot) | Weapon target |
-| Triangle / pyramid shapes | Masonic/Illuminati symbol |
-| Star shapes | Offensive connotation |
-| Eye shapes / iris / lens + dot | Eye of Providence — Illuminati |
-| Religious symbols (cross, crescent, Star of David, OM, ankh) | Offensive |
-| National symbols / flags | Offensive |
-| Text, letters, numbers | Not a seal |
+| Triangle / pyramid | Masonic / conspiracy symbol |
+| Star shapes (any) | Multiple offensive connotations |
+| Eye / iris / lens shapes | Eye of Providence |
+| Religious symbols (cross, crescent, Star of David, OM, ankh, etc.) | Offensive |
+| National flags or emblems | Offensive / IP |
+| Text, letters, numbers (inside inner design) | The initial is added separately |
 | Animals, faces, figures, hands | Not geometric |
-| Masonic symbols (compass, pyramid, all-seeing eye) | Offensive |
-| X shapes (two diagonal crossing lines) | Cross / weapon sight |
-| Standalone open arc as only inner motif | Not stamp-producible |
-| Off-center filled dots | Creates eye effect |
-| Thin-only compositions (rings + tiny floating element) | Vanishes in rubber |
+| X shapes (two diagonal lines crossing) | Cross / weapon sight |
+| Off-center filled dots | Creates eye or target effect |
+| Nationalist or hate symbols | Obvious |
+| Scalloped / floral / organic curves | Not producible (also banned by path ban) |
 
 ---
 
-## Allowed SVG Elements Only
+## ━━━ FLEXIBLE PERSONALIZATION RULES ━━━
 
-```
-<circle>  — rings, dots (centered only for fill="black")
-<rect>    — squares and rectangles (rotate with transform="rotate(N 150 150)")
-<line>    — straight lines (NEVER through center 150,150)
-<path>    — arcs (A command), curves (C command), and maze multi-subpaths (M...L)
-```
+> This is where every seal becomes unique to its family.
+> Claude must adapt within the ranges below — not ignore them, not exceed them.
 
-**Banned elements:** `<polygon>`, `<polyline>`, `<ellipse>`
+### Template Selection
+
+- 12 circle templates (C0–C11), 12 square templates (S0–S11)
+- `profileHash(origin, values)` determines the shuffle order
+- Same profile always → same 6 templates (deterministic, reproducible)
+- Different profile → different shuffle → different combination
+
+### Size Adaptation Ranges
+
+| Element | Min | Default | Max |
+|---------|-----|---------|-----|
+| Ring radius | r=48 | r=78 | r=94 |
+| Square inner width | w=88 | w=154 | w=224 |
+| Diamond (rotated rect) half-diag | 54px | 72px | 105px |
+| Tick/mark length | 12px | 18px | 28px |
+| Tick count | 4 | 6–8 | 12 |
+| Gap between concentric elements | 22px | 28px | 44px |
+
+### Profile Adaptation Guide
+
+| Profile signal | Design emphasis |
+|----------------|-----------------|
+| Ancient / complex origin | Larger outer r, denser elements, smaller gaps |
+| New / modern / minimal origin | Smaller r, fewer elements, larger gaps |
+| Strong values (Courage, Justice, Honor) | Bolder sizes, larger ticks/marks |
+| Gentle values (Harmony, Wisdom, Creativity) | Refined proportions, smaller details |
+| Past lineage | Tighter concentric spacing |
+| Future / new lineage | Open spacing, lighter weight |
+| Craftsman / Builder occupation | L-bracket or corner-mark templates |
+| Scholar / Architect occupation | Precise nested squares / compass marks |
+
+### Uniqueness Rule
+
+All 6 designs in a batch must be visually distinct.
+Before outputting: verify no two SVGs share the same element count at similar radii.
+If two templates would produce near-identical results, differentiate by:
+- Adjusting primary radius by ≥ 18px
+- Changing element count (e.g. 6 ticks → 8 ticks)
+- Switching between ring-dominant and line-dominant layout
+
+---
+
+## Template Inventory
+
+### Circle Templates (C0–C11)
+
+| ID | Name | Key elements |
+|----|------|-------------|
+| C0 | Single Ring | 1 ring, hero letter |
+| C1 | Diamond Frame | 1 rotated rect, no ring |
+| C2 | Double Ring | 2 concentric rings |
+| C3 | Sunburst Spokes | 8 radial lines, no ring |
+| C4 | Ring + Diamond | ring + rotated rect inside |
+| C5 | Compass Marks | ring + 6 inward tick marks |
+| C6 | Double Diamond | 2 nested rotated rects, no ring |
+| C7 | Ring + Outer Ticks | ring + 8 outward ticks |
+| C8 | Ring + Upright Square | ring + non-rotated square inside |
+| C9 | Ring + L-Brackets | ring + 4 corner L-shapes inside |
+| C10 | Cardinal Accents | ring + 4 perpendicular marks at N/E/S/W |
+| C11 | Ring + X Marks | ring + 4 diagonal inward marks |
+
+### Square Templates (S0–S11)
+
+| ID | Name | Key elements |
+|----|------|-------------|
+| S0 | Single Square | 1 square, hero letter |
+| S1 | Diamond Frame | 1 rotated rect, no square |
+| S2 | Double Square | 2 nested squares |
+| S3 | Sunburst Spokes | 8 radial lines, no square |
+| S4 | Square + Ring | square + inner ring |
+| S5 | Heritage Brackets | square + 4 corner L-brackets |
+| S6 | Triple Squares | 3 nested squares |
+| S7 | Square + Ticks | square + 8 tick marks |
+| S8 | Square + Diamond | square + rotated rect inside |
+| S9 | Cross Marks | square + 4 midpoint marks |
+| S10 | Open Cross | square + 4 cross arms with center gap |
+| S11 | Diagonal Corners | square + 4 diagonal inward marks |
 
 ---
 
 ## Code Validation (route.ts) — Auto-fallback Triggers
 
-| Check | Detection |
-|-------|-----------|
-| `<polygon>` / `<polyline>` | Regex match |
-| Triangle path | `M L L Z` with 3 vertices |
-| Line through center | `segmentPassesThroughCenter()` — proper segment intersection |
-| Off-center filled dot | `fill="black"` circle with `dist > 20` and `r < 20` |
-| Lollipop (off-center medium circle) | `dist > 35` and `r` 15–80 |
-| Bullseye | 2+ concentric rings + centered filled dot |
-| 3+ overlapping rotated rects | 3+ `<rect transform="rotate...">` |
-| X-shape paths | 2 path segments both passing through center |
-| Thin-only composition | 3+ circles, no rect, trivial path (`d.length < 60`) |
+| Check | What triggers fallback |
+|-------|----------------------|
+| Banned element | `<tspan>`, `<polygon>`, `<polyline>`, `<path>` |
+| Wrong border | Circle batch without `<circle cx="150" cy="150" r="132"` |
+| Wrong border | Square batch without `<rect x="18" y="18" width="264" height="264"` |
+| Thin stroke | Any `stroke-width` < 6 |
+| Out of bounds | Shape coordinates outside safe zone |
 
 ---
 
-## Maze Bracket Rules (SVGs 5–6)
+## Questionnaire (6 steps)
 
-**Grid:** 5×5 of 44px cells
-**Cell origins:** x ∈ {55, 96, 137, 178, 219} × y ∈ {55, 96, 137, 178, 219}
-**Fill:** 19–22 of 25 cells (skip 3–6 for breathing room)
-**Bracket size:** 22px span per bracket
-**Margin from border:** ~30px white band on all sides (prevents ink bleed)
-**Stroke:** `stroke-width="10"` `fill="none"` `stroke-linejoin="round"`
-
-Bracket types:
-```
-L-open-right:  M cx cy      L cx cy+22    L cx+22 cy+22
-L-open-left:   M cx+22 cy   L cx+22 cy+22 L cx cy+22
-L-open-up:     M cx cy+22   L cx cy       L cx+22 cy
-L-open-down:   M cx cy      L cx+22 cy    L cx+22 cy+22
-C-bracket:     M cx+22 cy   L cx cy       L cx cy+22  L cx+22 cy+22
-Short dash:    M cx cy+11   L cx+20 cy+11
-Tiny L (12px): M cx cy      L cx cy+12    L cx+12 cy+12
-```
-
-SVG 6 must differ from SVG 5 in cell selection and orientation mix.
+| Step | ID | Type | Notes |
+|------|----|------|-------|
+| 1 | `lineageStart` | select | Past / Present motivation |
+| 2 | `origin` | dropdown | Up to 3 countries + free text |
+| 3 | `occupation` | multiselect | Up to 3 + free text |
+| 4 | `values` | multiselect | **Min 1**, max 3 |
+| 5 | `language` | select | Script for the initial |
+| 6 | `initial` | alphabet | Letter grid from selected script |
 
 ---
 
-## Visual Metaphor Library
+## Legal & Compliance (PERMANENT — never remove)
 
-### Origin
-| Country | Motif |
-|---------|-------|
-| Morocco | Interlocking octagon grid (Zellige) |
-| Poland | Nested diamond + angular folk ornament |
-| Israel | Interlaced hexagonal ring |
-| Japan | Single bold arc + dot (Ma) |
-| Germany | Precision interlocked rectangles |
-| Italy | Circular wedge rosette |
-| Russia | Bold concentric squares |
-| UK/Ireland | Triple arc spiral (Celtic) |
-| Greece | Angular meander pattern |
-| France | Radial wedge + bold outer ring |
-| Spain | 8-segment circle (Mozarab) |
-| Turkey | 12-segment concentric ring (Ottoman) |
-| Default | Concentric bold rings |
+### GDPR & Privacy
+- Lawful basis: contractual necessity (order fulfilment)
+- Data minimisation: name, address, family profile, optional notes only
+- No third-party sharing except courier
+- No analytics, no advertising cookies
+- Retention: 3 years maximum, then permanent deletion
+- Data subject rights: access, rectification, erasure, portability — contact hello@sygneo.com
+- Service not directed to under-16s
 
-### Occupation
-| Role | Motif |
-|------|-------|
-| Farmer | 8 radiating spokes (harvest wheel, not through center) |
-| Carpenter/Builder | Interlocking L-shapes (joinery) |
-| Merchant | Two balanced semicircles facing each other |
-| Scholar | Nested squares at 45° offset |
-| Sailor | Octagon + 4 diagonal lines |
-| Engineer | Octagon with flat-cut edges (gear) |
-| Musician | 3 concentric arcs on one side |
-| Physician | Two circles + bold ring + open top arc |
-| Craftsman | Diamond rotated inside ring |
-| Blacksmith | Bold pentagon + centered dot |
+### Consent
+- Confirmation modal requires explicit checkbox before `handleConfirm` can proceed
+- Checkbox text covers: Terms, Privacy Policy, no-ink shipping, variable delivery
 
-### Values
-| Value | Motif |
-|-------|-------|
-| Resilience | Concentric rings growing outward |
-| Freedom | Open spiral from center |
-| Harmony | Two interlocking arcs (lens) |
-| Loyalty | Two interlocked rings |
-| Wisdom | Hexagon inside hexagon rotated 30° |
-| Courage | Bold diamond pointing upward |
-| Creativity | Irregular balanced arcs offset from center |
-| Justice | Two equal arcs on horizontal axis |
-| Prosperity | Expanding octagon rings |
-| Community | Three overlapping equal circles |
-| Honor | Octagon inside circle + bold ring |
-| Truth | Three concentric perfect circles |
+### Shipping Disclaimer (always visible)
+- Stamp ships **without ink** — postal/export regulations
+- No guaranteed delivery date
+- Incorrect address = re-shipping cost on customer
 
----
+### Security Headers (next.config.ts — never remove)
+- `X-Frame-Options: SAMEORIGIN`
+- `X-Content-Type-Options: nosniff`
+- `Strict-Transport-Security` — HTTPS enforced 2 years
+- `Content-Security-Policy`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` — camera, mic, geolocation disabled
 
-## Archived Styles (not active — can be re-enabled)
-
-- **Japanese** — max 3 shapes, large empty space, one dominant shape
-- **Modern** — 3–4 shapes, perfect symmetry, nested rings/rotated squares
-- **Ancient** — 4–5 shapes, layered dense ornament, concentric rings
-- **Abstract** — 3–4 shapes, asymmetric balanced, offset arcs/partial rings
-
-To re-enable: uncomment `SECTION_F` styles in `app/lib/seal-prompt.ts` and restore `STYLES` array in `app/page.tsx`.
+### Accessibility (WCAG 2.1 AA)
+- `lang="en"` on `<html>`
+- All interactive elements have accessible labels
+- Form fields have associated `<label>` elements
+- Keyboard navigation: all buttons/links natively focusable
 
 ---
 
@@ -193,67 +267,4 @@ To re-enable: uncomment `SECTION_F` styles in `app/lib/seal-prompt.ts` and resto
 |-------|------|
 | 1 batch (6 seals) | ~$0.08–0.12 |
 | Full session (2 batches) | ~$0.20 max |
-| Save to Redis | Free (Upstash free tier) |
-
----
-
-## Questionnaire (4 steps)
-
-1. `lineageStart` — מהעבר / מהיום
-2. `origin` — dropdown + free text, up to 3 countries
-3. `occupation` — multiselect up to 3 + free text
-4. `values` — multiselect 2–3 values
-
-*(style and shape questions removed — style is free, shape is fixed per column)*
-
----
-
-## Legal, Privacy & Compliance (PERMANENT — never remove)
-
-### Pages
-- **`/terms`** — Terms of Use + Privacy Policy (combined page)
-- Link appears in confirmation modal with mandatory consent checkbox
-
-### GDPR & International Privacy Compliance
-- **Lawful basis:** Contractual necessity (order fulfilment)
-- **Data minimisation:** only name, address, family profile, optional notes collected
-- **No third-party sharing** except courier for delivery — explicitly stated in policy
-- **No tracking cookies** — only essential session cookie for admin auth
-- **No advertising or profiling** — no analytics scripts
-- **Retention:** 3 years maximum, then permanent deletion
-- **Data subject rights:** access, rectification, erasure, portability, objection — contact hello@sygneo.com
-- **Children:** service not directed to under-16s
-
-### Consent
-- Confirmation modal requires explicit checkbox: "I have read and agree to Terms of Use & Privacy Policy"
-- Checkbox records agreement to: terms, privacy policy, no-ink shipping notice, variable delivery times
-- `termsAccepted` state must be `true` before `handleConfirm` can proceed
-
-### Shipping Disclaimer (must always be visible)
-- Stamp ships WITHOUT ink — postal/export regulations
-- No guaranteed delivery date — postal delays, customs, holidays
-- Incorrect address = re-shipping cost on customer
-
-### Security Headers (next.config.ts — never remove)
-- `X-Frame-Options: SAMEORIGIN` — prevents clickjacking
-- `X-Content-Type-Options: nosniff` — prevents MIME sniffing
-- `Strict-Transport-Security` — enforces HTTPS for 2 years
-- `Content-Security-Policy` — restricts resource origins
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy` — disables camera, mic, geolocation
-
-### Accessibility (WCAG 2.1 AA — maintain always)
-- `lang="en"` on `<html>` element
-- All interactive elements have accessible labels (`aria-label`, `aria-required`)
-- Form fields have associated `<label>` elements
-- Color contrast: gold `#8B7355` on white `#FFFFFF` = 3.8:1 (AA for large text)
-- All images/SVGs use `dangerouslySetInnerHTML` — add `role="img"` and `aria-label` if SVGs become `<img>` tags
-- Keyboard navigation: all buttons and links are natively focusable
-- No content relies solely on color to convey meaning
-- Error messages are text (not color only)
-
-### Data Storage Security
-- Upstash Redis: encrypted at rest + in transit (TLS)
-- Vercel hosting: SOC 2 Type II compliant
-- Admin routes protected by HMAC session cookie (`app/lib/admin-auth.ts`)
-- No sensitive data logged to console in production
+| Upstash Redis save | Free (free tier) |
