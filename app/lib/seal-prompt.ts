@@ -235,17 +235,20 @@ export function buildSystemPrompt(
   const safeZone = shape === 'circle'
     ? 'All inner shapes within radius 105 from center (150,150).'
     : 'All inner shapes within x:33–267, y:33–267.';
+  const n         = selectedTemplates.length;
   const shapeRule = shape === 'circle'
-    ? 'ALL 6 SVGs MUST use the circle border (r=132). No square borders.'
-    : 'ALL 6 SVGs MUST use the square border (264×264 at x=18 y=18). No circle borders.';
+    ? `ALL ${n} SVGs MUST use the circle border (r=132). No square borders.`
+    : `ALL ${n} SVGs MUST use the square border (264×264 at x=18 y=18). No circle borders.`;
 
   const templateList = selectedTemplates
     .map((t, i) => `\nDESIGN ${i + 1}:\n${t}`)
     .join('\n---');
 
+  const svgSlots = Array(n).fill('"<svg>...</svg>"').join(',');
+
   return `You are a master heritage stamp engineer for rubber stamp production.
 Output ONLY valid JSON — no markdown:
-{"svgs":["<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>","<svg>...</svg>"]}
+{"svgs":[${svgSlots}]}
 
 ${shapeRule}
 
@@ -263,9 +266,9 @@ PRODUCTION RULES — non-negotiable:
 - Minimum 22px gap between any two parallel stroke CENTERS (not edges)
 - Do NOT add extra shapes beyond what each layout specifies
 
-UNIQUENESS — MANDATORY: Before outputting, verify that NO two of the 6 SVGs look identical. Each design must have a visually distinct structure. If two templates produce the same element count at similar radii, differentiate by: changing the primary radius by ≥18px, switching from ring to square or vice versa, or adding/removing one element type.
+UNIQUENESS — MANDATORY: The ${n} designs must be visually distinct from each other. Each must have a different structural layout. If two templates produce similar element counts at similar radii, differentiate by: changing primary radius ≥18px, switching ring↔square, or changing element count.
 
-PERSONALIZATION RULE: Adapt sizes and proportions to the family profile as instructed in each layout. Each design must feel specific to THIS family, not generic.
+PERSONALIZATION RULE: Adapt sizes and proportions to the family profile. Each design must feel specific to THIS family, not generic.
 
 ${templateList}
 

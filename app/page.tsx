@@ -48,7 +48,7 @@ interface SealOption {
 // Exclude shape and style (no longer collected)
 const QUESTIONS = PROFILER_QUESTIONS.filter(q => q.id !== 'shape' && q.id !== 'style');
 
-const MAX_GENERATIONS = 2; // 2 batches × 6 seals = 12 total
+const MAX_GENERATIONS = 2; // 2 batches × 4 seals = 8 total
 
 function ShipField({ label, k, required, placeholder, shipping, setShipping, C, inline, numeric, tel }: {
   label: string; k: string; required?: boolean; placeholder: string;
@@ -451,7 +451,7 @@ export default function HomePage() {
                 return true;
               });
             return (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 8 }}>
                 {filteredSeals.map((seal) => {
                   const isSelected = chosen === seal.origIdx;
                   return (
@@ -462,8 +462,8 @@ export default function HomePage() {
                         <span style={{ position: 'absolute', top: 4, right: 6, fontSize: 12, color: C.gold }}>✓</span>
                       )}
                       {seal.imageUrl
-                        ? <img src={seal.imageUrl} alt={`Option ${seal.origIdx + 1}`} style={{ width: 130, height: 130, objectFit: 'contain' }} />
-                        : <div style={{ width: 130, height: 130, background: '#F5F0E8', position: 'relative' }}>
+                        ? <img src={seal.imageUrl} alt={`Option ${seal.origIdx + 1}`} style={{ width: 180, height: 180, objectFit: 'contain' }} />
+                        : <div style={{ width: 180, height: 180, background: '#F5F0E8', position: 'relative' }}>
                             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 60%, rgba(160,145,120,0.15) 100%)', zIndex: 1 }} />
                             <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: seal.svg }} />
                           </div>

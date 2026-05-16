@@ -158,11 +158,11 @@ async function generateBatch(shape: 'circle' | 'square', params: Params, selecte
     if (!parsed.svgs?.length) throw new Error(`Empty SVGs from ${shape} batch`);
 
     return parsed.svgs
-      .slice(0, 6)
+      .slice(0, 2)
       .map((svg, i) => injectInitial(validateSvg(svg, shape, i), params.initial, params.language));
   } catch (err) {
     console.error(`generate-batch ${shape}:`, err);
-    return Array.from({ length: 6 }, (_, i) =>
+    return Array.from({ length: 2 }, (_, i) =>
       injectInitial(fallbackSvg(shape, i), params.initial, params.language)
     );
   }
@@ -189,21 +189,21 @@ export async function POST(request: NextRequest) {
       values: valuesArr.join(', '), lineage, language, initial,
     };
 
-    // Shuffle all 12 templates by profile hash, then split into two complementary batches of 6.
-    // Batch 0 (variant=0) → first 6;  Batch 1 (variant=1) → last 6.  Zero overlap guaranteed.
+    // Shuffle all 12 templates by profile hash.
+    // Each batch uses 4 indices (2 for circles, 2 for squares). Zero overlap between batches.
     const hash       = profileHash(originStr, valuesArr.join(', '));
     const allIndices = selectIndices(hash, 12, 12);
-    const batchStart = (variant % 2) * 6;
-    const indices    = allIndices.slice(batchStart, batchStart + 6);
+    const batchStart = (variant % 3) * 4;          // 3 possible batches of 4
+    const indices    = allIndices.slice(batchStart, batchStart + 4);
 
     const [circleSvgs, squareSvgs] = await Promise.all([
-      generateBatch('circle', params, getCircleTemplates(indices)),
-      generateBatch('square', params, getSquareTemplates(indices)),
+      generateBatch('circle', params, getCircleTemplates(indices.slice(0, 2))),
+      generateBatch('square', params, getSquareTemplates(indices.slice(2, 4))),
     ]);
 
     const seals = [
       ...circleSvgs.map((svg, i) => ({ variant: i,     shape: 'circle', svg, imageUrl: null, error: null })),
-      ...squareSvgs.map((svg, i) => ({ variant: 6 + i, shape: 'square', svg, imageUrl: null, error: null })),
+      ...squareSvgs.map((svg, i) => ({ variant: 2 + i, shape: 'square', svg, imageUrl: null, error: null })),
     ];
 
     return NextResponse.json({ seals });
@@ -212,8 +212,8 @@ export async function POST(request: NextRequest) {
     console.error('generate-seal:', err);
     const params = { initial: '', language: '' } as Params;
     const seals = [
-      ...Array.from({ length: 6 }, (_, i) => ({ variant: i,     shape: 'circle', svg: injectInitial(fallbackSvg('circle', i), params.initial, params.language), imageUrl: null, error: null })),
-      ...Array.from({ length: 6 }, (_, i) => ({ variant: 6 + i, shape: 'square', svg: injectInitial(fallbackSvg('square', i), params.initial, params.language), imageUrl: null, error: null })),
+      ...Array.from({ length: 2 }, (_, i) => ({ variant: i,     shape: 'circle', svg: injectInitial(fallbackSvg('circle', i), params.initial, params.language), imageUrl: null, error: null })),
+      ...Array.from({ length: 2 }, (_, i) => ({ variant: 2 + i, shape: 'square', svg: injectInitial(fallbackSvg('square', i), params.initial, params.language), imageUrl: null, error: null })),
     ];
     return NextResponse.json({ seals });
   }
