@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildUserMessage, fontSpec, dyOffset } from '@/app/lib/seal-prompt';
+import {
+  buildSystemPrompt, buildUserMessage, fontSpec, dyOffset,
+  profileHash, selectIndices, getCircleTemplates, getSquareTemplates,
+} from '@/app/lib/seal-prompt';
 
 export const maxDuration = 60;
 
@@ -138,12 +141,12 @@ interface Params {
   lineage: string; language: string; initial: string;
 }
 
-async function generateBatch(shape: 'circle' | 'square', params: Params): Promise<string[]> {
+async function generateBatch(shape: 'circle' | 'square', params: Params, selectedTemplates: string[]): Promise<string[]> {
   try {
     const response = await anthropic.messages.create({
       model:      'claude-sonnet-4-6',
       max_tokens: 5000,
-      system:     buildSystemPrompt(shape),
+      system:     buildSystemPrompt(shape, selectedTemplates),
       messages:   [{ role: 'user', content: buildUserMessage(params) }],
     });
 
@@ -185,9 +188,12 @@ export async function POST(request: NextRequest) {
       values: valuesArr.join(', '), lineage, language, initial,
     };
 
+    const hash    = profileHash(originStr, valuesArr.join(', '));
+    const indices = selectIndices(hash, 10, 6);
+
     const [circleSvgs, squareSvgs] = await Promise.all([
-      generateBatch('circle', params),
-      generateBatch('square', params),
+      generateBatch('circle', params, getCircleTemplates(indices)),
+      generateBatch('square', params, getSquareTemplates(indices)),
     ]);
 
     const seals = [
