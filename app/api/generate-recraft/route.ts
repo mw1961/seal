@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
       lineage    = '',
       language   = '',
       initial    = '',
+      variant    = 0,
     } = await request.json();
 
     const originStr     = Array.isArray(origin)     ? (origin as string[]).join(', ')     : origin;
@@ -188,7 +189,8 @@ export async function POST(request: NextRequest) {
       values: valuesArr.join(', '), lineage, language, initial,
     };
 
-    const hash    = profileHash(originStr, valuesArr.join(', '));
+    // Include variant so each "Try Again" batch selects a different template set
+    const hash    = profileHash(originStr + '|v' + String(variant), valuesArr.join(', '));
     const indices = selectIndices(hash, 10, 6);
 
     const [circleSvgs, squareSvgs] = await Promise.all([

@@ -86,11 +86,11 @@ Cultural path MUST match origin:
   Default → 4 convex arcs at N/E/S/W, r=60, sweep=60°
 All path points must stay outside r=52 and inside r=80.`,
 
-  // C6 — WEIGHTED FRAME
-  `LAYOUT: Bold thick outer ring + small inner ring.
-Outer: r=94, stroke-width=13. Inner: r=58, stroke-width=11. Gap between stroke edges: (94-13/2)-(58+11/2) = 87.5-63.5 = 24px ✓
-Adapt to lineage type: past dynasty → outer r=96, inner r=56. New lineage → outer r=90, inner r=60.
-TWO elements. Minimum gap 22px.`,
+  // C6 — SQUARE FRAME + INNER RING
+  `LAYOUT: Outer square frame + ring centered inside. Shape inversion: square contains circle.
+Square: x=38, w=224, stroke-width=11. Ring: r=72, stroke-width=11.
+Ring outer edge = 72+5.5=77.5px from center. Square inner edge = 150-(38+5.5)=106.5px from center. Ring fits well inside ✓.
+TWO elements. Adapt to lineage: past dynasty → r=78. Modern/New → r=66. Default → r=72.`,
 
   // C7 — RING + 8 TICK MARKS
   `LAYOUT: Ring + 8 short tick lines evenly spaced.
@@ -100,11 +100,11 @@ Correct: ticks between r=98 and r=112 (between border r=132 and ring r=86+5=91).
 Angles: 0° 45° 90° 135° 180° 225° 270° 315°.
 Adapt tick count to values: Community/Loyalty → 12 ticks at 30°. Default → 8 ticks.`,
 
-  // C8 — TRIPLE CONCENTRIC
-  `LAYOUT: Three concentric rings. Gaps ≥ 22px between each pair.
-Rings: r=96, r=72, r=50. Gaps: 24px and 22px ✓
-stroke-width=10 each. THREE elements only.
-Adapt spacing to values: Resilience/Wisdom → equal spacing. Freedom/Creativity → unequal (r=98, r=68, r=48).`,
+  // C8 — RING + UPRIGHT INNER SQUARE
+  `LAYOUT: Ring + upright (non-rotated) square inside. Distinct from C4 which uses a 45° diamond.
+Ring r=82, stroke-width=11. Square: x=99, y=99, width=102, height=102 (centered at 150,150; half=51px < ring r=82 ✓).
+TWO elements. Verify square corners: (99,99) distance from center = √(51²+51²)=72px < ring r=82 ✓.
+Adapt square size to values: Courage/Justice → w=110 x=95. Harmony → w=94 x=103. Default → w=102.`,
 
   // C9 — RING + CORNER BRACKETS
   `LAYOUT: Ring + 4 short L-bracket paths inside the ring.
@@ -221,6 +221,8 @@ PRODUCTION RULES — non-negotiable:
 - CLEAR ZONE: no decorative element closer than r=58 from center (150,150) — letter sits there
 - Minimum 22px gap between any two parallel stroke CENTERS (not edges)
 - Do NOT add extra shapes beyond what each layout specifies
+
+UNIQUENESS — MANDATORY: Before outputting, verify that NO two of the 6 SVGs look identical. Each design must have a visually distinct structure. If two templates produce the same element count at similar radii, differentiate by: changing the primary radius by ≥18px, switching from ring to square or vice versa, or adding/removing one element type.
 
 PERSONALIZATION RULE: Adapt sizes and proportions to the family profile as instructed in each layout. Each design must feel specific to THIS family, not generic.
 
