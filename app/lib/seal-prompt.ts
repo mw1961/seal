@@ -73,24 +73,21 @@ Ring r: adapt to occupation — Scholar/Architect → r=88, Craftsman/Farmer →
 Rotated rect: 72×72 at 45° (half-diagonal=51px, well within ring). stroke-width=11 both.
 TWO elements. Verify rect corners stay inside ring.`,
 
-  // C5 — CULTURAL HERITAGE PATH
-  `LAYOUT: Ring + ONE cultural ornament path reflecting origin.
+  // C5 — RING + 6 COMPASS MARKS
+  `LAYOUT: Ring + 6 short inward tick marks at 60° intervals (compass style). NO paths or curves.
 Ring r=84, stroke-width=11.
-Cultural path MUST match origin:
-  Morocco/Turkey/Iran → 6-arc interlace rosette inside r=60
-  Japan/China/Korea → single bold arc 200° sweep at r=60
-  Ireland/UK/Celtic → triple-arc spiral (3 arcs, each 120°, r=58)
-  Greece/Mediterranean → 6-segment stepped meander at r=55-65
-  Israel/Middle East → interlocked hexagonal arcs at r=58
-  Russia/Eastern Europe → bold concentric arc brackets at r=60
-  Default → 4 convex arcs at N/E/S/W, r=60, sweep=60°
-All path points must stay outside r=52 and inside r=80.`,
+6 marks: each 16px long, outer end at r=77, inner end at r=63 (outside clear zone r=58 ✓).
+For each angle a: outerX=150+77·cos(a), outerY=150−77·sin(a); innerX=150+63·cos(a), innerY=150−63·sin(a).
+Angles: 0° 60° 120° 180° 240° 300°.
+stroke-width=11. SEVEN elements (ring + 6 lines). All points within safe zone ✓.
+Adapt count to values: Community/Loyalty → 8 marks at 45°. Wisdom → 12 marks at 30°. Default → 6.`,
 
-  // C6 — SQUARE FRAME + INNER RING
-  `LAYOUT: Outer square frame + ring centered inside. Shape inversion: square contains circle.
-Square: x=38, w=224, stroke-width=11. Ring: r=72, stroke-width=11.
-Ring outer edge = 72+5.5=77.5px from center. Square inner edge = 150-(38+5.5)=106.5px from center. Ring fits well inside ✓.
-TWO elements. Adapt to lineage: past dynasty → r=78. Modern/New → r=66. Default → r=72.`,
+  // C6 — DOUBLE DIAMOND
+  `LAYOUT: Two nested rotated rects (diamonds) at 45°. NO ring, NO square borders.
+Outer: 144×144 at 45°, centered at (150,150). Half-diagonal = 102px ≤ safe zone 105 ✓.
+Inner: 100×100 at 45°, centered at (150,150). Half-diagonal = 71px. Gap = 102−71 = 31px ✓.
+stroke-width=11. TWO elements only.
+Adapt outer size to lineage: past dynasty → 148×148 (half-diag=105). Modern → 136×136. Default → 144×144.`,
 
   // C7 — RING + 8 TICK MARKS
   `LAYOUT: Ring + 8 short tick lines evenly spaced.
@@ -124,11 +121,16 @@ Ring r=82, stroke-width=11.
 All at r=104, within safe zone ✓. stroke-width=10. FIVE elements (ring + 4 lines).
 Adapt mark length to values: Honor/Courage → 30px. Wisdom → 18px. Default → 24px.`,
 
-  // C11 — TRIPLE CONCENTRIC RINGS
-  `LAYOUT: Three concentric rings. Minimum 22px gap between stroke centers.
-Rings: r=94, r=70, r=48. Gaps: 24px and 22px ✓. stroke-width=10 each. THREE elements only.
-IMPORTANT: Three rings must be clearly distinguishable at output — verify spacing.
-Adapt to values: Resilience/Wisdom → equal spacing (r=94,70,48). Freedom/Creativity → unequal (r=96,68,44).`,
+  // C11 — RING + DIAGONAL X MARKS
+  `LAYOUT: Ring + 4 short diagonal lines forming an X inside the ring. NOT concentric rings.
+Ring r=84, stroke-width=11.
+4 diagonal marks at 45°, from r=62 to r=78 from center (inside ring, outside clear zone ✓):
+  NE: x1=194 y1=106 x2=205 y2=95
+  NW: x1=106 y1=106 x2=95  y2=95
+  SE: x1=194 y1=194 x2=205 y2=205
+  SW: x1=106 y1=194 x2=95  y2=205
+stroke-width=11 stroke-linecap="round". FIVE elements.
+Adapt mark length to values: Courage/Justice → 20px (extend to r=60/r=80). Default → 16px.`,
 ];
 
 // ── Square template library (10 options) ──────────────────────────────────
@@ -267,7 +269,8 @@ PERSONALIZATION RULE: Adapt sizes and proportions to the family profile as instr
 
 ${templateList}
 
-BANNED: <polygon> <polyline> <ellipse> <text> <tspan>
+BANNED ELEMENTS: <polygon> <polyline> <ellipse> <text> <tspan> <path>
+Use ONLY: <circle> <rect> <line> — these three elements produce clean, production-safe stamps.
 BANNED CONTENT: religious symbols, military/weapon symbols, stars, crosses, crescents, triangles, eyes, flags, animals, faces, nationalist or hate symbols, scalloped/floral patterns`;
 }
 
