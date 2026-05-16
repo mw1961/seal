@@ -12,12 +12,15 @@
 |-------|------|------|
 | Questionnaire | `app/lib/profiler-agent.ts` | 6 questions → family profile |
 | Template library | `app/lib/seal-prompt.ts` | 12 circle + 12 square templates |
-| Generation API | `app/api/generate-recraft/route.ts` | Selects 6 templates via profile hash → calls Claude |
-| Rendering | `app/page.tsx` | Shows 12 seals per session (2 batches × 6) |
+| Generation API | `app/api/generate-recraft/route.ts` | Selects 4 templates via profile hash → calls Claude |
+| Rendering | `app/page.tsx` | Shows 8 seals per session (2 batches × 4), 2×2 grid |
 | Storage | `app/lib/db.ts` | Upstash Redis, prefix `sygneo:` |
 | Admin | `app/admin/dashboard/` | Order management + production panel |
 
-**Template selection:** `profileHash(origin, values)` shuffles all 12 → batch 0 gets indices 0–5, batch 1 gets indices 6–11. Zero overlap between batches. Different profile = different shuffle = different designs.
+**Template selection:** `profileHash(origin, values)` shuffles all 12 → each batch takes 4 consecutive indices (2 for circles, 2 for squares). `batchStart = (variant % 3) * 4`. Zero overlap between batches. Different profile = different shuffle = different designs.
+
+**Per batch:** 2 circle SVGs + 2 square SVGs = **4 designs**. Two batches = **8 total**.
+Cost per session: ~$0.06–0.10.
 
 ---
 
@@ -219,8 +222,8 @@ If two templates would produce near-identical results, differentiate by:
 | 1 | `lineageStart` | select | Past / Present motivation |
 | 2 | `origin` | dropdown | Up to 3 countries + free text |
 | 3 | `occupation` | multiselect | Up to 3 + free text |
-| 4 | `values` | multiselect | **Min 1**, max 3 |
-| 5 | `language` | select | Script for the initial |
+| 4 | `values` | multiselect | **Min 1**, max 3 (was 2–3, relaxed) |
+| 5 | `language` | select | 10 scripts: Latin/Hebrew/Arabic/Cyrillic/Greek/Armenian/Japanese/Chinese/Korean/Georgian |
 | 6 | `initial` | alphabet | Letter grid from selected script |
 
 ---
